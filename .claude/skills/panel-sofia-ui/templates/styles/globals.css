@@ -1,0 +1,209 @@
+/*
+ * Panel Sofía — tema para shadcn/ui + Tailwind CSS v4.
+ * Pega este archivo como src/styles/globals.css (o fusiónalo con el existente).
+ * Fuente de verdad: reference/tokens.json. No edites valores aquí sin cambiar tokens.json.
+ * Modo oscuro: clase .dark en <html> (patrón por defecto de shadcn).
+ */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ── 1. Tokens crudos del sistema (prefijo --ps-) ─────────────────────── */
+:root {
+  --ps-bg: #f6f7f9;
+  --ps-surface: #ffffff;
+  --ps-surface-2: #f0f2f5;
+  --ps-border: #e2e5ea;
+  --ps-border-strong: #8c94a0;
+  --ps-ink: #14171c;
+  --ps-ink-muted: #545c68;
+  --ps-ink-faint: #6b7380;
+  --ps-primary: #1d4ed8;
+  --ps-primary-hover: #1e3fae;
+  --ps-on-primary: #ffffff;
+  --ps-primary-soft: #e9effd;
+  --ps-focus: #1d4ed8;
+  --ps-ai: #6a3fcf;
+  --ps-ai-soft: #f2ecfe;
+  --ps-exact: #2f4a68;
+  --ps-exact-soft: #e8eef5;
+  --ps-legal: #8a4f00;
+  --ps-legal-soft: #fdf2de;
+  --ps-warning: var(--ps-legal);
+  --ps-warning-soft: var(--ps-legal-soft);
+  --ps-success: #12703a;
+  --ps-success-soft: #e3f4ea;
+  --ps-danger: #c01f1f;
+  --ps-danger-hover: #9c1717;
+  --ps-on-danger: #ffffff;
+  --ps-danger-soft: #fdeceb;
+  --ps-added-soft: #e3f4ea;
+  --ps-removed-soft: #fde8e7;
+  --ps-wa-wallpaper: #efeae2;
+  --ps-wa-header: #f0f2f5;
+  --ps-wa-in: #ffffff;
+  --ps-wa-out: #d9fdd3;
+  --ps-wa-ink: #111b21;
+  --ps-wa-meta: #5b6b74;
+  --ps-shadow-sm: 0 1px 2px rgba(16,24,40,0.06);
+  --ps-shadow-lg: 0 12px 32px rgba(16,24,40,0.16);
+}
+.dark {
+  --ps-bg: #0d0f12;
+  --ps-surface: #16191d;
+  --ps-surface-2: #1e2227;
+  --ps-border: #2a2f36;
+  --ps-border-strong: #646d79;
+  --ps-ink: #eceef1;
+  --ps-ink-muted: #a3aab4;
+  --ps-ink-faint: #8a929d;
+  --ps-primary: #7ea6ff;
+  --ps-primary-hover: #a3c0ff;
+  --ps-on-primary: #0a1533;
+  --ps-primary-soft: #1a2546;
+  --ps-focus: #a3c0ff;
+  --ps-ai: #bba3ff;
+  --ps-ai-soft: #271f40;
+  --ps-exact: #a9c0dc;
+  --ps-exact-soft: #1c2633;
+  --ps-legal: #f2b55c;
+  --ps-legal-soft: #33260e;
+  --ps-warning: var(--ps-legal);
+  --ps-warning-soft: var(--ps-legal-soft);
+  --ps-success: #62d394;
+  --ps-success-soft: #11301f;
+  --ps-danger: #ff8a80;
+  --ps-danger-hover: #ffaaa3;
+  --ps-on-danger: #2a0606;
+  --ps-danger-soft: #3a1717;
+  --ps-added-soft: #123320;
+  --ps-removed-soft: #3d1919;
+  --ps-wa-wallpaper: #0b141a;
+  --ps-wa-header: #202c33;
+  --ps-wa-in: #202c33;
+  --ps-wa-out: #005c4b;
+  --ps-wa-ink: #e9edef;
+  --ps-wa-meta: #c9d3d8;
+  --ps-shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
+  --ps-shadow-lg: 0 12px 32px rgba(0,0,0,0.6);
+}
+
+/* ── 2. Variables que espera shadcn/ui, mapeadas a los tokens ─────────── */
+:root, .dark {
+  --background: var(--ps-bg);
+  --foreground: var(--ps-ink);
+  --card: var(--ps-surface);
+  --card-foreground: var(--ps-ink);
+  --popover: var(--ps-surface);
+  --popover-foreground: var(--ps-ink);
+  --primary: var(--ps-primary);
+  --primary-foreground: var(--ps-on-primary);
+  --secondary: var(--ps-surface-2);
+  --secondary-foreground: var(--ps-ink);
+  --muted: var(--ps-surface-2);
+  --muted-foreground: var(--ps-ink-muted);
+  --accent: var(--ps-surface-2);
+  --accent-foreground: var(--ps-ink);
+  --destructive: var(--ps-danger);
+  --destructive-foreground: var(--ps-on-danger);
+  --border: var(--ps-border);
+  --input: var(--ps-border-strong);
+  --ring: var(--ps-focus);
+  --radius: 10px;
+  --sidebar: var(--ps-surface);
+  --sidebar-foreground: var(--ps-ink-muted);
+  --sidebar-primary: var(--ps-primary);
+  --sidebar-primary-foreground: var(--ps-on-primary);
+  --sidebar-accent: var(--ps-primary-soft);
+  --sidebar-accent-foreground: var(--ps-primary);
+  --sidebar-border: var(--ps-border);
+  --sidebar-ring: var(--ps-focus);
+  --chart-1: var(--ps-primary);
+  --chart-2: var(--ps-success);
+  --chart-3: var(--ps-legal);
+  --chart-4: var(--ps-ai);
+  --chart-5: var(--ps-exact);
+}
+
+/* ── 3. Utilidades de Tailwind (bg-ai, text-exact, bg-wa-out, font-wa…) ─ */
+@theme inline {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --font-wa: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Propios del panel */
+  --color-surface-2: var(--ps-surface-2);
+  --color-border-strong: var(--ps-border-strong);
+  --color-ink-faint: var(--ps-ink-faint);
+  --color-primary-soft: var(--ps-primary-soft);
+  --color-ai: var(--ps-ai);
+  --color-ai-soft: var(--ps-ai-soft);
+  --color-exact: var(--ps-exact);
+  --color-exact-soft: var(--ps-exact-soft);
+  --color-legal: var(--ps-legal);
+  --color-legal-soft: var(--ps-legal-soft);
+  --color-warning: var(--ps-warning);
+  --color-warning-soft: var(--ps-warning-soft);
+  --color-success: var(--ps-success);
+  --color-success-soft: var(--ps-success-soft);
+  --color-danger-soft: var(--ps-danger-soft);
+  --color-danger-hover: var(--ps-danger-hover);
+  --color-added-soft: var(--ps-added-soft);
+  --color-removed-soft: var(--ps-removed-soft);
+  --color-wa-wallpaper: var(--ps-wa-wallpaper);
+  --color-wa-header: var(--ps-wa-header);
+  --color-wa-in: var(--ps-wa-in);
+  --color-wa-out: var(--ps-wa-out);
+  --color-wa-ink: var(--ps-wa-ink);
+  --color-wa-meta: var(--ps-wa-meta);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  --shadow-sm: var(--ps-shadow-sm);
+  --shadow-lg: var(--ps-shadow-lg);
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground font-sans antialiased; font-size: 14px; line-height: 20px; }
+  :focus-visible { outline: 2px solid var(--ps-focus); outline-offset: 2px; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+}

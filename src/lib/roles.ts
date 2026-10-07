@@ -13,7 +13,9 @@ export type Action =
   | 'gestionarRobots'
   | 'editarAgente'
   | 'probarEditor'
-  | 'gestionarUsuarios';
+  | 'gestionarUsuarios'
+  /** v1.9: crear Brains y cargar o quitar fuentes. */
+  | 'gestionarConocimiento';
 
 const ADMIN_ONLY: Action[] = [
   'reanudar',
@@ -23,6 +25,7 @@ const ADMIN_ONLY: Action[] = [
   'editarAgente',
   'probarEditor',
   'gestionarUsuarios',
+  'gestionarConocimiento',
 ];
 
 export const can = (role: Role, action: Action) => role === 'ADMIN' || !ADMIN_ONLY.includes(action);
@@ -37,10 +40,21 @@ export const REASON: Record<Action, string> = {
   editarAgente: 'Requiere rol ADMIN',
   probarEditor: 'Solo un ADMIN puede probar lo que hay en el editor',
   gestionarUsuarios: 'Requiere rol ADMIN',
+  gestionarConocimiento: 'Requiere rol ADMIN',
 };
 
 /** `undefined` si puede; si no, el motivo para deshabilitar el control. */
 export const reasonFor = (role: Role, action: Action) => (can(role, action) ? undefined : REASON[action]);
+
+/**
+ * Permiso «Publicar conocimiento» (v1.9): publicar, revertir y conectar Brains. Es ADMIN + la
+ * marca que asigna otro ADMIN en Usuarios.
+ */
+export function publishKnowledgeReason(me: { role: Role; knowledgePublisher?: boolean }): string | undefined {
+  if (me.role !== 'ADMIN') return 'Requiere rol ADMIN';
+  if (!me.knowledgePublisher) return 'Requiere el permiso «Publicar conocimiento» (un ADMIN lo asigna en Usuarios)';
+  return undefined;
+}
 
 /** Salvaguardas de Usuarios: nadie se desactiva ni se quita el rol, y siempre queda un ADMIN activo. */
 export function userGuard(opts: { isSelf: boolean; isLastActiveAdmin: boolean }): {

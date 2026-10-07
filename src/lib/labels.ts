@@ -46,3 +46,16 @@ export const ROLE_HELP: Record<'ADMIN' | 'OPERADOR', string> = {
   ADMIN: 'Todo, incluidos robots, agente y usuarios',
   OPERADOR: 'Consulta, prueba la versión publicada y apagado de emergencia',
 };
+
+/** Brains (v1.9). */
+export const USE_LABEL: Record<string, string> = {
+  CATALOG: 'Catálogo',
+  FULL_CONTEXT: 'Contexto completo',
+  SEARCH: 'Búsqueda',
+};
+export const USE_HELP: Record<string, string> = {
+  CATALOG: 'Planes desde Excel o CSV. Se guardan como registros; el agente los consulta por proceso y los precios salen literales.',
+  FULL_CONTEXT: 'Texto corto que va completo en cada turno (horarios, políticas breves).',
+  SEARCH: 'Documentos largos (preguntas frecuentes, políticas): en cada turno se envían solo los fragmentos más relevantes.',
+};
+export const KIND_LABEL: Record<string, string> = { FILE: 'Archivo', TEXT: 'Texto', WEB: 'Página web' };

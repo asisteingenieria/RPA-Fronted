@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 
 type Pending = { kind: 'deactivate' | 'reset'; user: PanelUser } | null;
 
@@ -34,8 +35,15 @@ export function UsuariosPage() {
   const [pending, setPending] = useState<Pending>(null);
 
   const update = useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: { role?: Role; active?: boolean } }) => api.updateUser(id, patch),
+    mutationFn: ({ id, patch }: { id: string; patch: { role?: Role; active?: boolean; knowledgePublisher?: boolean } }) =>
+      api.updateUser(id, patch),
     onSuccess: (u, v) => {
+      if (v.patch.knowledgePublisher !== undefined) {
+        toast.success(
+          u.knowledgePublisher ? `${u.username} puede publicar conocimiento` : `${u.username} ya no puede publicar conocimiento`,
+        );
+        return;
+      }
       toast.success(v.patch.role ? `${u.username} ahora es ${u.role}` : u.active ? `${u.username} activado` : `${u.username} desactivado`);
     },
     onError: (err) => toast.error(errorMessage(err, 'No se pudo actualizar el usuario.')),
@@ -90,6 +98,7 @@ export function UsuariosPage() {
                 <TableHead>Usuario</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Publicar conocimiento</TableHead>
                 <TableHead>Cambio de contraseña</TableHead>
                 <TableHead>Último ingreso</TableHead>
                 <TableHead>Creado por</TableHead>
@@ -145,6 +154,20 @@ export function UsuariosPage() {
                     </TableCell>
                     <TableCell>
                       <UserStatus active={u.active} lockedUntil={u.lockedUntil} />
+                    </TableCell>
+                    <TableCell>
+                      <PublisherSwitch
+                        user={u}
+                        reason={
+                          self
+                            ? 'No puedes cambiar tus propios permisos'
+                            : u.role !== 'ADMIN'
+                              ? 'Solo un ADMIN puede tener este permiso'
+                              : undefined
+                        }
+                        busy={busy}
+                        onChange={(v) => update.mutate({ id: u.id, patch: { knowledgePublisher: v } })}
+                      />
                     </TableCell>
                     <TableCell>{u.mustChangePassword ? <Status tone="info" label="Pendiente" /> : '—'}</TableCell>
                     <TableCell>{u.lastLoginAt ? fmtWhen(u.lastLoginAt) : 'Nunca'}</TableCell>
@@ -282,5 +305,43 @@ function CreateUserDialog({ open, onOpenChange, onCreated }: { open: boolean; on
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Permiso «Publicar conocimiento» (v1.9): publicar, revertir y conectar Brains. Solo para ADMIN;
+ * nadie se lo cambia a sí mismo. Lo que no se puede se ve deshabilitado con su motivo.
+ */
+function PublisherSwitch({
+  user,
+  reason,
+  busy,
+  onChange,
+}: {
+  user: PanelUser;
+  reason?: string;
+  busy: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  const on = !!user.knowledgePublisher;
+  const control = (
+    <span className="inline-flex items-center gap-2">
+      <Switch
+        checked={on}
+        disabled={!!reason || busy}
+        onCheckedChange={onChange}
+        aria-label={`Publicar conocimiento: ${user.username}`}
+      />
+      <span className="text-[13px] text-ink-muted">{on ? 'Sí' : 'No'}</span>
+    </span>
+  );
+  if (!reason) return control;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0}>{control}</span>
+      </TooltipTrigger>
+      <TooltipContent>{reason}</TooltipContent>
+    </Tooltip>
   );
 }

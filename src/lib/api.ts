@@ -14,6 +14,8 @@ export interface Me {
   username: string;
   role: Role;
   mustChangePassword: boolean;
+  /** v1.9: permiso «Publicar conocimiento» (publicar, revertir y conectar Brains). */
+  knowledgePublisher?: boolean;
 }
 
 export interface Session {
@@ -57,6 +59,8 @@ export interface PanelUser {
   role: Role;
   active: boolean;
   mustChangePassword: boolean;
+  /** v1.9: permiso «Publicar conocimiento». */
+  knowledgePublisher?: boolean;
   lockedUntil: string | null;
   lastLoginAt: string | null;
   createdBy: string | null;
@@ -277,6 +281,139 @@ export interface AgentIssue {
   message: string;
 }
 
+// ---------- Brains (v1.9, /admin/knowledge, D-001 de RobotRPA) ----------
+
+export type KnowledgeUse = 'CATALOG' | 'FULL_CONTEXT' | 'SEARCH';
+export type SourceKind = 'FILE' | 'TEXT' | 'WEB';
+export type SourceStatus = 'PROCESSING' | 'READY' | 'ERROR';
+export type SaleProcess = 'PORTABILIDAD' | 'MIGRACION' | 'LINEA_NUEVA';
+
+export interface SourceIssue {
+  row?: number;
+  column?: string;
+  message: string;
+}
+
+export interface KnowledgeSource {
+  id: string;
+  kind: SourceKind;
+  use: KnowledgeUse;
+  name: string;
+  mime: string | null;
+  url: string | null;
+  refreshHours: number | null;
+  metadata: { proceso?: SaleProcess } | null;
+  sizeBytes: number;
+  contentHash: string;
+  status: SourceStatus;
+  errorReason: string | null;
+  issues: SourceIssue[] | null;
+  lastIngestedAt: string | null;
+  createdBy: string;
+  createdAt: string;
+  chunks: number;
+}
+
+export interface CatalogFieldChange {
+  field: string;
+  label: string;
+  before: string | number | null;
+  after: string | number | null;
+}
+
+export interface BrainDiff {
+  added: { code: string; process: SaleProcess; name: string }[];
+  removed: { code: string; process: SaleProcess; name: string }[];
+  changed: { code: string; process: SaleProcess; name: string; changes: CatalogFieldChange[] }[];
+  unchanged: number;
+  documents?: {
+    added: { source: string; use: KnowledgeUse; chunks: number }[];
+    removed: { source: string; use: KnowledgeUse; chunks: number }[];
+    changed: { source: string; use: KnowledgeUse; chunksBefore: number; chunksAfter: number }[];
+  };
+}
+
+export interface BrainVersionSummary {
+  id: string;
+  version: number;
+  status: AgentStatus;
+  basedOn: number | null;
+  diff: BrainDiff | null;
+  evalSummary: EvalSummary | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedBy: string | null;
+  publishedAt: string | null;
+  /** Cantidad de planes del catálogo. */
+  records: number;
+  /** Cantidad de fragmentos de documentos. */
+  chunks: number;
+  changes: { added: number; removed: number; changed: number; documents: number } | null;
+}
+
+export interface BrainListItem {
+  id: string;
+  name: string;
+  createdBy: string;
+  createdAt: string;
+  sources: number;
+  uses: KnowledgeUse[];
+  processing: number;
+  errors: number;
+  agents: string[];
+  published: BrainVersionSummary | null;
+  working: BrainVersionSummary | null;
+}
+
+export interface BrainDetail {
+  id: string;
+  name: string;
+  createdBy: string;
+  createdAt: string;
+  agents: { agentKey: string; connectedBy: string; connectedAt: string }[];
+  sources: KnowledgeSource[];
+  versions: BrainVersionSummary[];
+  limits: { catalogMaxBytes: number; documentMaxBytes: number; textMaxChars: number };
+}
+
+export interface CatalogRecordRow {
+  id: string;
+  process: SaleProcess;
+  code: string;
+  title: string;
+  name: string | null;
+  dataText: string;
+  sharedDataText: string | null;
+  includesText: string | null;
+  extrasText: string | null;
+  unlimitedAppsText: string | null;
+  callsText: string | null;
+  priceCop: number;
+  discountText: string | null;
+  hash: string;
+}
+
+/** Vista previa de una versión: aquí `records` es la lista de planes, no el conteo. */
+export type BrainVersionDetail = Omit<BrainVersionSummary, 'records'> & {
+  records: CatalogRecordRow[];
+  documents: { source: string; use: KnowledgeUse; chunks: number; tokens: number; preview: string[] }[];
+};
+
+export type BrainTestResult =
+  | { version: number; mode: 'catalog'; status: 'OK' | 'SIN_PLANES'; process: SaleProcess; plans: CatalogRecordRow[] }
+  | {
+      version: number;
+      mode: 'documents';
+      question: string;
+      blocks: { kind: 'FULL_CONTEXT' | 'SEARCH'; chunkId: string; sourceName: string; text: string }[];
+    };
+
+export interface NewSourceOptions {
+  use: KnowledgeUse;
+  proceso?: SaleProcess | '';
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -318,6 +455,27 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 const send = (body: unknown, method = 'POST'): RequestInit => ({ method, body: JSON.stringify(body) });
+
+/** Subida de archivos (multipart): sin content-type, el navegador pone el límite del formulario. */
+async function upload<T>(path: string, form: FormData): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      method: 'POST',
+      body: form,
+      credentials: 'same-origin',
+      headers: { 'x-requested-with': 'abaya-panel' },
+    });
+  } catch {
+    throw new ApiError(0, 'No hay conexión con el servidor del robot.');
+  }
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { message?: unknown };
+    const message = Array.isArray(body.message) ? body.message.join('. ') : body.message;
+    throw new ApiError(res.status, typeof message === 'string' ? message : `HTTP ${res.status}`);
+  }
+  return (await res.json()) as T;
+}
 const enc = encodeURIComponent;
 
 export const api = {
@@ -336,7 +494,7 @@ export const api = {
 
   users: () => request<PanelUser[]>('/admin/users'),
   createUser: (username: string, role: Role) => request<TemporaryPassword>('/admin/users', send({ username, role })),
-  updateUser: (id: string, patch: { role?: Role; active?: boolean }) =>
+  updateUser: (id: string, patch: { role?: Role; active?: boolean; knowledgePublisher?: boolean }) =>
     request<PanelUser>(`/admin/users/${enc(id)}`, send(patch, 'PATCH')),
   resetPassword: (id: string) => request<TemporaryPassword>(`/admin/users/${enc(id)}/reset-password`, send({})),
 
@@ -371,6 +529,50 @@ export const api = {
     message: string;
   }) => request<AgentTestResult>('/admin/agent/test', send(body)),
   restoreAgentVersion: (id: string) => request<AgentVersion>(`/admin/agent/versions/${enc(id)}/restore`, send({})),
+
+  // Brains (v1.9)
+  brains: () => request<BrainListItem[]>('/admin/knowledge/brains'),
+  brain: (id: string) => request<BrainDetail>(`/admin/knowledge/brains/${enc(id)}`),
+  createBrain: (name: string) => request<{ id: string; name: string }>('/admin/knowledge/brains', send({ name })),
+  deleteBrain: (id: string) => request<{ ok: true }>(`/admin/knowledge/brains/${enc(id)}`, { method: 'DELETE' }),
+  addFileSource: (id: string, file: File, o: NewSourceOptions) => {
+    const form = new FormData();
+    form.append('use', o.use);
+    if (o.proceso) form.append('proceso', o.proceso);
+    form.append('file', file, file.name);
+    return upload<KnowledgeSource>(`/admin/knowledge/brains/${enc(id)}/sources`, form);
+  },
+  addTextSource: (id: string, body: NewSourceOptions & { name: string; text: string }) =>
+    request<KnowledgeSource>(`/admin/knowledge/brains/${enc(id)}/sources/text`, send(body)),
+  addWebSource: (id: string, body: NewSourceOptions & { url: string; refreshHours: number | null }) =>
+    request<KnowledgeSource>(`/admin/knowledge/brains/${enc(id)}/sources/web`, send(body)),
+  removeSource: (id: string, sourceId: string) =>
+    request<{ draftVersion: number | null }>(`/admin/knowledge/brains/${enc(id)}/sources/${enc(sourceId)}`, {
+      method: 'DELETE',
+    }),
+  reprocessSource: (id: string, sourceId: string) =>
+    request<{ ok: true }>(`/admin/knowledge/brains/${enc(id)}/sources/${enc(sourceId)}/reprocess`, send({})),
+  brainVersion: (id: string, version: number, process?: SaleProcess) =>
+    request<BrainVersionDetail>(
+      `/admin/knowledge/brains/${enc(id)}/versions/${version}${process ? `?process=${process}` : ''}`,
+    ),
+  publishBrain: (id: string) =>
+    request<{ version: number; status: AgentStatus; diff: BrainDiff }>(
+      `/admin/knowledge/brains/${enc(id)}/draft/publish`,
+      send({}),
+    ),
+  restoreBrainVersion: (id: string, version: number) =>
+    request<{ version: number }>(`/admin/knowledge/brains/${enc(id)}/versions/${version}/restore`, send({})),
+  testBrain: (id: string, body: { process?: SaleProcess; question?: string; version?: 'draft' }) =>
+    request<BrainTestResult>(`/admin/knowledge/brains/${enc(id)}/test`, send(body)),
+  agentBrains: () =>
+    request<{ id: string; name: string; connectedBy: string; connectedAt: string }[]>(
+      '/admin/knowledge/agents/default/brains',
+    ),
+  connectBrain: (brainId: string) =>
+    request<{ ok: true }>(`/admin/knowledge/agents/default/brains/${enc(brainId)}`, { method: 'PUT' }),
+  disconnectBrain: (brainId: string) =>
+    request<{ ok: true }>(`/admin/knowledge/agents/default/brains/${enc(brainId)}`, { method: 'DELETE' }),
 };
 
 /** Descargas directas (el navegador manda la cookie de sesión). */

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { AgentStatus, RobotStatus } from '@/lib/api';
+import type { AgentStatus, RobotStatus, SourceStatus } from '@/lib/api';
 import { fmtTime } from '@/lib/format';
 
 type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'outline';
@@ -94,3 +94,14 @@ export function UserStatus({ active, lockedUntil }: { active: boolean; lockedUnt
 }
 
 export { Status };
+
+/* Fuente de un Brain (v1.9) */
+const SOURCE: Record<SourceStatus, [Tone, string]> = {
+  PROCESSING: ['warning', 'Procesando…'],
+  READY: ['success', 'Lista'],
+  ERROR: ['danger', 'Error'],
+};
+export function SourceState({ status, title }: { status: SourceStatus; title?: string }) {
+  const [tone, label] = SOURCE[status];
+  return <Status tone={tone} label={label} pulse={status === 'PROCESSING'} {...(title ? { title } : {})} />;
+}

@@ -26,7 +26,8 @@ Necesita `apps/api` de RobotRPA corriendo. El ingreso usa los usuarios del panel
 | `/agente/configuracion` | Guion en Markdown con revisión en vivo, ajustes, bienvenida, catálogo (insertar marcador), prueba | `/admin/agent`, `/review`, `/draft`, `/draft/publish` |
 | `/agente/probar` | Chat de simulación con el motor real | `/admin/agent/test` |
 | `/agente/historial` · `/agente/evaluaciones` | Versiones, restaurar, reporte de la suite | `/admin/agent/versions`, `/restore` |
-| `/usuarios` · `/auditoria` | Solo ADMIN | `/admin/users*`, `/admin/audit` |
+| `/agente/conocimiento` | Brains: fuentes (Excel/CSV, PDF, DOCX, TXT, MD, texto y páginas web), vista previa del catálogo y documentos, publicar con evaluación y resumen de cambios, historial, prueba de `consultar_planes` y de preguntas; selector de Brains en Configuración | `/admin/knowledge/*` |
+| `/usuarios` · `/auditoria` | Solo ADMIN (Usuarios incluye el permiso «Publicar conocimiento») | `/admin/users*`, `/admin/audit` |
 | `/cuenta/contrasena` | Cambio de contraseña (menú del avatar) | `/admin/auth/password` |
 
 Roles: **ADMIN** (todo) y **OPERADOR** (consulta, prueba la versión publicada y apagado de

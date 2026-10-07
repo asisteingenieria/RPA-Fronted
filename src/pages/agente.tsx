@@ -13,6 +13,7 @@ import {
   Cpu,
   FlaskConical,
   History,
+  Library,
   MessageCircle,
   Package,
   RotateCcw,
@@ -57,6 +58,7 @@ import {
 import { VersionStatus } from '@/components/rpa/status';
 import { PromptEditor, type EditorIssue, type PromptEditorHandle } from '@/components/rpa/agent/prompt-editor';
 import { WhatsAppPreview } from '@/components/rpa/agent/whatsapp-preview';
+import { AgentBrainsSelector, KnowledgeTab } from '@/pages/conocimiento';
 import {
   AgentBar,
   CatalogReadOnly,
@@ -74,7 +76,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-export const AGENT_TABS = ['configuracion', 'probar', 'historial', 'evaluaciones'] as const;
+export const AGENT_TABS = ['configuracion', 'probar', 'historial', 'evaluaciones', 'conocimiento'] as const;
 export type AgentTab = (typeof AGENT_TABS)[number];
 const CAMPAIGN = 'Claro Móvil';
 const EVAL_POLL_MS = 5_000;
@@ -271,6 +273,7 @@ export function AgentePage() {
     { id: 'probar', label: 'Probar agente', icon: FlaskConical },
     { id: 'historial', label: 'Historial', icon: History, count: allVersions.length },
     { id: 'evaluaciones', label: 'Evaluaciones', icon: SquareCheck },
+    { id: 'conocimiento', label: 'Conocimiento', icon: Library },
   ];
   const chatTitle = `${form.agentName || 'Agente'} · ${CAMPAIGN}`;
 
@@ -345,6 +348,7 @@ export function AgentePage() {
         />
       )}
       {tab === 'evaluaciones' && <EvaluationsTab versions={allVersions} loading={versions.isLoading} />}
+      {tab === 'conocimiento' && <KnowledgeTab />}
 
       <ConfirmDialog
         open={!!restoreFor}
@@ -499,6 +503,13 @@ function ConfigTab({
         </Section>
         <Section title="Catálogo" icon={Package} badge={<LockedBadge>Solo lectura</LockedBadge>} defaultOpen>
           <CatalogReadOnly plans={data.catalog} canInsert={!readOnly} onInsert={(m) => editor.current?.insert(m)} />
+        </Section>
+        <Section title="Conocimiento (Brains)" icon={Library}>
+          <p className="m-0 text-xs text-ink-subtle">
+            Brains publicados que usa el agente: un solo catálogo y los documentos que quieras. Sus datos van al modelo como información, nunca como
+            instrucciones.
+          </p>
+          <AgentBrainsSelector />
         </Section>
         <Section title="Reglas del sistema" icon={Shield} badge={<LockedBadge>No editable</LockedBadge>}>
           <p className="m-0 text-xs text-ink-subtle">Van siempre antes del guion y no se pueden cambiar desde el panel.</p>

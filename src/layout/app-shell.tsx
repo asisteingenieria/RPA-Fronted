@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
-import { FileText, GitBranch, LogOut, Monitor, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Sun } from 'lucide-react';
+import { FileText, GitBranch, KeyRound, LogOut, Monitor, Moon, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDateTime, formatTime } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
@@ -27,6 +27,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ChangePasswordForm } from '@/pages/login';
 import { CommandMenu } from './command-menu';
 
 const EDITING = ['/conversacion', '/catalogo', '/campanas'];
@@ -131,6 +133,7 @@ function TopBar({ onSearch }: { onSearch: () => void }) {
   const { pub, changes } = useContent();
   const { robot, setStopped } = useRobot();
   const { pref, setPref } = useTheme();
+  const [changePw, setChangePw] = useState(false);
   const status = robot.stopped ? 'detenido' : robot.session;
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-6 backdrop-blur">
@@ -189,12 +192,20 @@ function TopBar({ onSearch }: { onSearch: () => void }) {
             {!OPS_LIVE && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => backend.resetDemo()}>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    backend.resetDemo();
+                    logout();
+                  }}
+                >
                   <RotateCcw /> Restablecer datos de demostración
                 </DropdownMenuItem>
               </>
             )}
             <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setChangePw(true)}>
+              <KeyRound /> Cambiar contraseña
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={logout}>
               <LogOut /> Salir
             </DropdownMenuItem>
@@ -209,6 +220,14 @@ function TopBar({ onSearch }: { onSearch: () => void }) {
           <TooltipContent>Salir</TooltipContent>
         </Tooltip>
       </div>
+      <Dialog open={changePw} onOpenChange={setChangePw}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cambiar contraseña</DialogTitle>
+          </DialogHeader>
+          <ChangePasswordForm userId={user.id} onDone={() => setChangePw(false)} />
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }

@@ -287,8 +287,21 @@ export interface DraftState {
   edits: Record<string, { by: string; at: string }>;
 }
 
+/** Credencial de un usuario del panel (solo hash; nunca la contraseña). */
+export interface Credential {
+  hash: string;
+  salt: string;
+  iterations: number;
+  /** Contraseña temporal asignada por un administrador: se debe cambiar al ingresar. */
+  mustChange: boolean;
+  failed: number;
+  lockedUntil?: string;
+  updatedAt: string;
+}
+
 export interface Db {
   versions: Version[];
+  credentials: Record<string, Credential>;
   draft: DraftState;
   evalRuns: EvalRun[];
   evalCases: EvalCase[];

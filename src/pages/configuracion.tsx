@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Bell, Save, UserPlus } from 'lucide-react';
+import { Bell, Copy, KeyRound, LockOpen, Save, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDateTime } from '@/lib/format';
 import { ROLE_LABEL, useUser } from '@/auth/session';
@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Pill } from '@/components/panel/badges';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Callout, ConfirmDialog, Field, NoPermission, NumberInput, PageHeader, Panel } from '@/components/panel/common';
 import { PermissionButton } from '@/components/panel/workflow';
@@ -25,6 +27,25 @@ export function ConfiguracionPage() {
   const [s, setS] = useState<Settings>(() => structuredClone(db.settings));
   const [invite, setInvite] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '', role: 'operador' as Role });
+  const [tempFor, setTempFor] = useState<User | null>(null);
+  const [shown, setShown] = useState<{ user: User; password: string } | null>(null);
+  const issueTemp = async (u: User) => setShown({ user: u, password: await backend.setTempPassword(actor, u.id) });
+  const credState = (u: User) => {
+    const c = db.credentials[u.id];
+    if (!c) return { tone: 'outline' as const, label: 'Sin contraseña' };
+    if (c.lockedUntil && new Date(c.lockedUntil) > new Date()) return { tone: 'danger' as const, label: 'Bloqueado' };
+    if (c.mustChange) return { tone: 'warning' as const, label: 'Debe cambiar contraseña' };
+    return { tone: 'success' as const, label: 'Activo' };
+  };
+  const changeRole = async (u: User, role: Role) => {
+    const admins = db.users.filter((x) => x.roles.includes('administrador'));
+    if (u.roles.includes('administrador') && role !== 'administrador' && admins.length === 1) {
+      toast.error('Debe quedar al menos un administrador');
+      return;
+    }
+    await backend.upsertUser(actor, { ...u, roles: [role], title: ROLE_LABEL[role] });
+    toast.success(`Rol de ${u.name} actualizado`);
+  };
   useEffect(() => setS(structuredClone(db.settings)), [db.settings]);
   const dirty = JSON.stringify(s) !== JSON.stringify(db.settings);
   const urlOk = !s.alertWebhook || /^https:\/\/[^\s]+$/.test(s.alertWebhook);
@@ -127,6 +148,8 @@ export function ConfiguracionPage() {
               <TableHead>Correo</TableHead>
               <TableHead>Rol</TableHead>
               <TableHead>Último acceso</TableHead>
+              <TableHead>Acceso</TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -135,7 +158,7 @@ export function ConfiguracionPage() {
                 <TableCell className="font-medium">{u.name}</TableCell>
                 <TableCell className="text-muted-foreground">{u.email}</TableCell>
                 <TableCell>
-                  <Select value={u.roles[0]} onValueChange={(v) => void backend.upsertUser(actor, { ...u, roles: [v as Role] }).then(() => toast.success(`Rol de ${u.name} actualizado`))}>
+                  <Select value={u.roles[0]} onValueChange={(v) => void changeRole(u, v as Role)}>
                     <SelectTrigger size="sm" className="w-48" aria-label={`Rol de ${u.name}`}>
                       <SelectValue />
                     </SelectTrigger>
@@ -149,6 +172,21 @@ export function ConfiguracionPage() {
                   </Select>
                 </TableCell>
                 <TableCell className="tabular">{formatDateTime(u.lastAccess)}</TableCell>
+                <TableCell>
+                  <Pill tone={credState(u).tone}>{credState(u).label}</Pill>
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-right">
+                  {credState(u).label === 'Bloqueado' && (
+                    <Button variant="ghost" size="sm" onClick={() => void backend.unlockUser(actor, u.id).then(() => toast.success(`${u.name} desbloqueado`))}>
+                      <LockOpen />
+                      Desbloquear
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => setTempFor(u)}>
+                    <KeyRound />
+                    Contraseña temporal
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -165,10 +203,14 @@ export function ConfiguracionPage() {
             toast.error('Escribe nombre y un correo válido');
             throw new Error('incompleto');
           }
+          if (db.users.some((x) => x.email.toLowerCase() === newUser.email.trim().toLowerCase())) {
+            toast.error('Ya existe un usuario con ese correo');
+            throw new Error('duplicado');
+          }
           const u: User = { id: `u-${Date.now()}`, name: newUser.name.trim(), email: newUser.email.trim(), roles: [newUser.role], title: ROLE_LABEL[newUser.role], lastAccess: new Date().toISOString() };
           await backend.upsertUser(actor, u);
           setNewUser({ name: '', email: '', role: 'operador' });
-          toast.success('Invitación enviada');
+          await issueTemp(u);
         }}
       >
         <div className="grid gap-3">
@@ -194,6 +236,42 @@ export function ConfiguracionPage() {
           </Field>
         </div>
       </ConfirmDialog>
+      <ConfirmDialog
+        open={!!tempFor}
+        onOpenChange={(o) => !o && setTempFor(null)}
+        title={`¿Asignar una contraseña temporal a ${tempFor?.name}?`}
+        description="Su contraseña actual deja de servir. Deberá cambiar la temporal en su próximo ingreso."
+        confirmLabel="Asignar contraseña temporal"
+        onConfirm={async () => {
+          if (tempFor) await issueTemp(tempFor);
+        }}
+      />
+      <Dialog open={!!shown} onOpenChange={(o) => !o && setShown(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Contraseña temporal de {shown?.user.name}</DialogTitle>
+            <DialogDescription>Se muestra una sola vez. Entrégala por un canal seguro; el usuario deberá cambiarla al ingresar.</DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 rounded-md border bg-surface-2 px-3 py-2">
+            <code className="flex-1 font-mono text-[15px] tracking-wide">{shown?.password}</code>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Copiar contraseña"
+              onClick={() => {
+                void navigator.clipboard?.writeText(shown?.password ?? '');
+                toast.success('Copiada');
+              }}
+            >
+              <Copy />
+            </Button>
+          </div>
+          <p className="text-[13px] text-muted-foreground">Correo: {shown?.user.email}</p>
+          <DialogFooter>
+            <Button onClick={() => setShown(null)}>Listo</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

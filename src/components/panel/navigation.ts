@@ -45,9 +45,9 @@ export const ORIGIN_DOT: Record<Origin, string> = { ia: "bg-ai", exacto: "bg-exa
 /** Permisos que la UI REFLEJA (el servidor los aplica). Texto del tooltip cuando faltan. */
 export const PERMISSIONS = {
   editarBorrador: { roles: ["editor", "aprobador", "administrador"], reason: "Requiere rol Editor de contenido" },
-  aprobar: { roles: ["aprobador"], reason: "Requiere rol Aprobador" },
-  publicar: { roles: ["aprobador"], reason: "Requiere rol Aprobador" },
-  editarLegal: { roles: ["legal"], reason: "Solo el rol Legal puede editar el texto de autorización" },
+  aprobar: { roles: ["aprobador", "administrador"], reason: "Requiere rol Aprobador" },
+  publicar: { roles: ["aprobador", "administrador"], reason: "Requiere rol Aprobador" },
+  editarLegal: { roles: ["legal", "administrador"], reason: "Solo el rol Legal puede editar el texto de autorización" },
   configurar: { roles: ["administrador"], reason: "Requiere rol Administrador" },
   apagarRobot: { roles: ["operador", "editor", "aprobador", "legal", "administrador"], reason: "" },
 } as const satisfies Record<string, { roles: Role[]; reason: string }>;

@@ -1,7 +1,7 @@
 import { createRootRoute, createRoute, createRouter, lazyRouteComponent, Link, redirect } from '@tanstack/react-router';
 import { useSessionCtx } from '@/auth/session';
 import { AppShell } from '@/layout/app-shell';
-import { LoginPage } from '@/pages/login';
+import { ForcedChangePage, LoginPage } from '@/pages/login';
 import { InicioPage } from '@/pages/inicio';
 import type { StepId } from '@/data/types';
 
@@ -23,7 +23,8 @@ const ConfiguracionPage = lazyRouteComponent(() => import('@/pages/configuracion
 
 function Root() {
   const { session } = useSessionCtx();
-  return session ? <AppShell /> : <LoginPage />;
+  if (!session) return <LoginPage />;
+  return session.mustChange ? <ForcedChangePage /> : <AppShell />;
 }
 
 function NotFound() {

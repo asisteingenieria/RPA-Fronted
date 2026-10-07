@@ -137,6 +137,8 @@ export function buildSeed(): Db {
   ];
   return {
     versions,
+    // Sin contraseñas en el código: el primer ingreso crea la del administrador.
+    credentials: {},
     draft: {
       snapshot: clone(h.v13),
       edits: {

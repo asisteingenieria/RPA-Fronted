@@ -6,10 +6,13 @@
 import { diffSnapshots, hasLegalChange } from '@/lib/content-diff';
 import { chainHash } from '@/lib/hash';
 import { evalPassed, runEvaluation } from '@/engine/evals';
+import { generateTempPassword, hashPassword, passwordIssues, verifyPassword } from '@/lib/password';
 import { buildSeed } from './seed';
 import type { ContentSnapshot, Db, EvalCase, SectionKey, Settings, User } from './types';
 
 const KEY = 'panel-sofia:db:v1';
+const MAX_FAILED = 5;
+const LOCK_MINUTES = 15;
 const listeners = new Set<() => void>();
 
 function load(): Db {
@@ -23,6 +26,8 @@ function load(): Db {
 }
 
 let db: Db = load();
+// Datos guardados antes de existir las contraseñas.
+if (!db.credentials) db.credentials = {};
 
 function persist() {
   try {
@@ -245,6 +250,108 @@ export const backend = {
 
   async logExport(actor: Actor, what: string) {
     commit((d) => audit(d, actor, 'Exportó', what));
+  },
+
+  /* ───────────── Autenticación ───────────── */
+
+  /** Primer arranque: ningún usuario tiene contraseña; se crea la del administrador. */
+  needsSetup(): boolean {
+    return Object.keys(db.credentials).length === 0;
+  },
+
+  async setupAdmin(userId: string, password: string) {
+    if (!backend.needsSetup()) throw new Error('La configuración inicial ya se hizo');
+    const u = db.users.find((x) => x.id === userId && x.roles.includes('administrador'));
+    if (!u) throw new Error('El usuario no es administrador');
+    const issues = passwordIssues(password);
+    if (issues.length) throw new Error(issues.join(' · '));
+    const h = await hashPassword(password);
+    commit((d) => {
+      d.credentials[userId] = { ...h, mustChange: false, failed: 0, updatedAt: nowIso() };
+      audit(d, { name: u.name, role: 'Administrador' }, 'Configuración inicial', 'Contraseña del administrador');
+    });
+  },
+
+  /** Ingreso con correo y contraseña. Mensaje genérico ante fallos (no revela si el correo existe). */
+  async login(email: string, password: string): Promise<{ user: User; mustChange: boolean }> {
+    await wait(300);
+    const u = db.users.find((x) => x.email.toLowerCase() === email.trim().toLowerCase());
+    const cred = u ? db.credentials[u.id] : undefined;
+    const generic = 'Correo o contraseña incorrectos';
+    if (!u || !cred) {
+      await hashPassword(password); // mismo tiempo de respuesta exista o no el usuario
+      throw new Error(generic);
+    }
+    if (cred.lockedUntil && new Date(cred.lockedUntil) > new Date())
+      throw new Error(`Usuario bloqueado por intentos fallidos. Intenta de nuevo después de las ${new Date(cred.lockedUntil).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false })} o pide a un administrador que lo desbloquee.`);
+    const ok = await verifyPassword(password, cred);
+    const actor = { name: u.name, role: u.roles.join(', ') };
+    if (!ok) {
+      commit((d) => {
+        const c = d.credentials[u.id]!;
+        c.failed += 1;
+        audit(d, actor, 'Intento fallido de ingreso', u.email);
+        if (c.failed >= MAX_FAILED) {
+          c.lockedUntil = new Date(Date.now() + LOCK_MINUTES * 60_000).toISOString();
+          c.failed = 0;
+          audit(d, { name: 'Sistema', role: 'Sistema' }, 'Usuario bloqueado', u.email, `${MAX_FAILED} intentos fallidos`);
+        }
+      });
+      throw new Error(generic);
+    }
+    commit((d) => {
+      const c = d.credentials[u.id]!;
+      c.failed = 0;
+      c.lockedUntil = undefined;
+      const usr = d.users.find((x) => x.id === u.id)!;
+      usr.lastAccess = nowIso();
+      audit(d, actor, 'Inició sesión', u.email);
+    });
+    return { user: db.users.find((x) => x.id === u.id)!, mustChange: cred.mustChange };
+  },
+
+  async changePassword(userId: string, current: string, next: string) {
+    const u = db.users.find((x) => x.id === userId);
+    const cred = db.credentials[userId];
+    if (!u || !cred) throw new Error('Usuario no encontrado');
+    if (!(await verifyPassword(current, cred))) throw new Error('La contraseña actual no es correcta');
+    const issues = passwordIssues(next);
+    if (issues.length) throw new Error(issues.join(' · '));
+    if (await verifyPassword(next, cred)) throw new Error('La nueva contraseña debe ser distinta de la actual');
+    const h = await hashPassword(next);
+    commit((d) => {
+      d.credentials[userId] = { ...h, mustChange: false, failed: 0, updatedAt: nowIso() };
+      audit(d, { name: u.name, role: u.roles.join(', ') }, 'Cambió su contraseña', u.email);
+    });
+  },
+
+  /** El administrador asigna una contraseña temporal (se muestra una sola vez). */
+  async setTempPassword(actor: Actor, userId: string): Promise<string> {
+    const u = db.users.find((x) => x.id === userId);
+    if (!u) throw new Error('Usuario no encontrado');
+    const temp = generateTempPassword();
+    const h = await hashPassword(temp);
+    commit((d) => {
+      d.credentials[userId] = { ...h, mustChange: true, failed: 0, updatedAt: nowIso() };
+      audit(d, actor, 'Asignó contraseña temporal', u.email);
+    });
+    return temp;
+  },
+
+  async unlockUser(actor: Actor, userId: string) {
+    await wait();
+    commit((d) => {
+      const c = d.credentials[userId];
+      if (c) {
+        c.lockedUntil = undefined;
+        c.failed = 0;
+      }
+      audit(d, actor, 'Desbloqueó usuario', d.users.find((x) => x.id === userId)?.email ?? userId);
+    });
+  },
+
+  async logout(user: User) {
+    commit((d) => audit(d, { name: user.name, role: user.roles.join(', ') }, 'Cerró sesión', user.email));
   },
 
   resetDemo() {

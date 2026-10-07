@@ -17,17 +17,34 @@ pnpm test         # motor de simulación y evaluaciones
 pnpm build        # typecheck + build de producción en dist/
 ```
 
-En la pantalla de ingreso eliges un **usuario de demostración** para recorrer cada rol:
+### Ingreso y contraseñas
 
-| Usuario | Rol | Qué puede hacer |
-|---|---|---|
-| Ana Rojas | Editor de contenido | Edita el borrador y lo envía a evaluación |
-| Juan Pérez | Aprobador | Aprueba, publica y revierte (no lo que él mismo escribió) |
-| Carolina Méndez | Legal | Único rol que edita y aprueba el texto legal |
-| Luis Gómez | Operador | Inicio, monitoreo, auditoría y apagado de emergencia |
-| María Torres | Administrador | Configuración, usuarios y roles |
+No hay contraseñas en el código. La primera vez el panel muestra **Configuración inicial** para crear
+la contraseña del administrador (María Torres, `maria.torres@claro.com.co`). Después:
 
-Menú del usuario → **Restablecer datos de demostración** vuelve todo al estado inicial.
+1. El administrador entra con su correo y contraseña.
+2. En **Configuración → Usuarios y roles** pulsa **Contraseña temporal** en cada usuario; se muestra
+   una sola vez para entregarla.
+3. Cada usuario entra con su correo y la temporal, y el panel lo obliga a crear la suya.
+
+Reglas: mínimo 10 caracteres con letras y números; bloqueo de 15 min tras 5 intentos fallidos (el
+administrador puede desbloquear); la sesión vence tras 8 h sin actividad; cada usuario puede
+**Cambiar contraseña** desde su menú. Se guardan con PBKDF2-SHA256 y sal, nunca en claro, y todo
+ingreso, fallo y cambio queda en la auditoría.
+
+| Usuario | Correo | Rol | Qué puede hacer |
+|---|---|---|---|
+| María Torres | maria.torres@claro.com.co | Administrador | **Todo**, incluidos usuarios y configuración |
+| Ana Rojas | ana.rojas@claro.com.co | Editor de contenido | Edita el borrador y lo envía a evaluación |
+| Juan Pérez | juan.perez@claro.com.co | Aprobador | Aprueba, publica y revierte |
+| Carolina Méndez | carolina.mendez@claro.com.co | Legal | Edita y aprueba el texto legal |
+| Luis Gómez | luis.gomez@claro.com.co | Operador | Inicio, monitoreo, auditoría y apagado de emergencia |
+
+Excepción para todos, también el administrador: nadie aprueba un cambio que escribió (cuatro ojos).
+Debe quedar siempre al menos un administrador.
+
+Menú del usuario → **Restablecer datos de demostración** vuelve todo al estado inicial, **incluidas
+las contraseñas** (vuelve a pedir la configuración inicial).
 
 ## Recorrido sugerido
 
@@ -81,4 +98,5 @@ Query · React Hook Form + zod · CodeMirror 6 · Recharts · lucide-react. Todo
    llamadas, descuento) y crear `ContentVersion` con el contenido inmutable por versión.
 3. Que el worker lea la versión publicada (plantillas, catálogo, parámetros) en vez de los archivos
    sintéticos, y que «Publicar» exija la evaluación aprobada en el servidor.
-4. SSO corporativo (OIDC) en lugar de los usuarios de demostración; los permisos los aplica el servidor.
+4. Mover el ingreso al servidor (o al SSO corporativo con OIDC): hoy las contraseñas viven en el
+   navegador como parte de la demostración; los permisos los debe aplicar el servidor.

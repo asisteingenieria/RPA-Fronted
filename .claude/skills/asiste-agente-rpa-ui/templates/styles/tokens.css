@@ -1,0 +1,198 @@
+/*
+ * Asiste · Agente RPA — tokens de diseño (fuente de verdad: tokens.json).
+ * Tema claro por defecto; oscuro con data-theme="dark" en <html>, o automático
+ * según el sistema operativo si no hay data-theme (como el panel actual).
+ * Fuentes: empaquetadas localmente (sin CDN):
+ *   npm i @fontsource/outfit @fontsource/plus-jakarta-sans
+ *   import "@fontsource/outfit/500.css"; import "@fontsource/outfit/600.css"; import "@fontsource/outfit/700.css";
+ *   import "@fontsource/plus-jakarta-sans/400.css"; ... /500.css; /600.css; /700.css
+ */
+:root, [data-theme="light"] {
+  --scrim: rgba(8, 20, 39, 0.55);
+  --brand-navy: #1856a4;  /* Azul profundo del logo. Hover del botón primario, días/valores destacados en gráficos. */
+  --brand-blue: #1372b8;  /* Azul del wordmark ASISTE ING. Color de marca principal; enlaces e íconos activos. */
+  --brand-azure: #0a8ec4;  /* Azul medio del degradado del logo. Solo gráficos y decoración, nunca texto. */
+  --brand-cyan: #01acd1;  /* Cian del logo. Acento: subrayado de pestaña activa, foco, barras de progreso. Nunca fondo de botón ni texto. */
+  --brand-aqua: #30bacf;  /* Aqua del logo. Solo decoración y gráficos. */
+  --primary: var(--brand-blue);  /* Botón primario (Guardar, Publicar, Ingresar) y elementos seleccionados. Texto encima: on-primary. */
+  --primary-hover: var(--brand-navy);  /* Hover/pressed del botón primario. */
+  --primary-soft: #e6f1fa;  /* Fondo de fila seleccionada, chip activo, ícono de KPI, insignia info. */
+  --primary-soft-ink: var(--brand-navy);  /* Texto e íconos sobre primary-soft; enlaces (.link). */
+  --on-primary: #ffffff;  /* Texto sobre primary y sobre danger-solid. */
+  --surface-0: #f4f7fb;  /* Fondo de la página. */
+  --surface-100: #ffffff;  /* Tarjetas, tablas, modales, editores. */
+  --surface-200: #eef3f9;  /* Encabezado de tabla, pista de barras, campos deshabilitados, segmentado. */
+  --border: #dbe4ef;  /* Bordes de tarjetas y divisores. */
+  --border-strong: #8c9db3;  /* Borde de campos de formulario (3:1). */
+  --ink: #0f1f35;  /* Texto principal sobre surface-0/100/200. */
+  --ink-muted: #52627a;  /* Texto secundario, etiquetas de KPI, descripciones. */
+  --ink-subtle: #647389;  /* Placeholders, metadatos, ids secundarios. */
+  --sidebar-bg: #0f2f5c;  /* Barra superior navy (TopNav) y botón navy. */
+  --sidebar-ink: #c9d8ee;  /* Texto de pestañas en reposo sobre sidebar-bg. */
+  --sidebar-active: #1b4a86;  /* Fondo de ítem activo sobre navy. */
+  --sidebar-indicator: var(--brand-cyan);  /* Subrayado de 3 px de la pestaña activa del TopNav. */
+  --focus-ring: var(--brand-cyan);  /* Anillo de foco de 2 px en todo control. */
+  --success: #2a7430;  /* Robot operando, En línea, Publicado, validador ✓. Texto sobre success-soft y surface-100. */
+  --success-soft: #e6f3e6;  /* Fondo de insignias de éxito. */
+  --warning: #8a5a00;  /* Reconectando, Evaluando, advertencias, promedio fuera de meta. Texto sobre warning-soft. */
+  --warning-soft: #fdf1dc;  /* Fondo de avisos y de insignias de advertencia. */
+  --danger: #c0362c;  /* Robot detenido, Caído, Rechazado, errores del guion. Texto sobre danger-soft y surface-100. */
+  --danger-soft: #fbe7e5;  /* Fondo de la banda de robot detenido y de la tarjeta de evaluación rechazada. */
+  --danger-solid: #c0362c;  /* Fondo del botón Apagado de emergencia y de confirmaciones destructivas. Texto: on-primary. */
+  --cat-hogar: #1856a4;  /* Chip de campaña HOGAR (texto). */
+  --cat-hogar-soft: #e6f1fa;  /* Chip HOGAR (fondo). */
+  --cat-tyt: #06708a;  /* Chip T&T (texto). Origen «plantilla del sistema» en el chat de prueba. */
+  --cat-tyt-soft: #dff5f9;  /* Chip T&T (fondo). */
+  --cat-operacion: #8a5a00;  /* Chip OPERACIÓN (texto). */
+  --cat-operacion-soft: #fdf1dc;  /* Chip OPERACIÓN (fondo). */
+  --cat-tecnologia: #4b4fb3;  /* Chip TECNOLOGÍA (texto). Origen «modelo» en el chat de prueba. */
+  --cat-tecnologia-soft: #ecedfb;  /* Chip TECNOLOGÍA (fondo). */
+  --cat-movil: #b23a67;  /* Chip de campaña MÓVIL / CLARO MÓVIL (texto). */
+  --cat-movil-soft: #fbe8ef;  /* Chip MÓVIL (fondo). */
+  --wa-wallpaper: #efeae2;  /* Fondo del chat en la vista de WhatsApp (prueba del agente). */
+  --wa-header: #f0f2f5;  /* Barra superior y campo de escritura de la vista de WhatsApp. */
+  --wa-in: #ffffff;  /* Burbuja del agente (izquierda). */
+  --wa-out: #d9fdd3;  /* Burbuja del cliente de prueba (derecha). */
+  --wa-ink: #111b21;  /* Texto de las burbujas. */
+  --wa-meta: #5b6b74;  /* Hora y metadatos dentro de las burbujas. */
+  --code-bg: #f7f9fc;  /* Fondo del editor del guion (Markdown). */
+  --code-heading: #1856a4;  /* Títulos ## MENU, ## PERFIL… en el editor del guion. */
+  --code-marker: #06708a;  /* Marcadores {{OFERTA:…}} en el editor del guion. */
+  --shadow-card: 0 1px 2px rgba(15, 47, 92, 0.06), 0 1px 3px rgba(15, 47, 92, 0.05);
+  --shadow-pop: 0 8px 24px rgba(15, 47, 92, 0.12);
+  --shadow-modal: 0 24px 48px rgba(15, 47, 92, 0.22);
+}
+
+[data-theme="dark"] {
+  --scrim: rgba(0, 0, 0, 0.6);
+  --brand-navy: #5b93d9;
+  --brand-blue: #4ea3e6;
+  --primary: #1372b8;
+  --primary-hover: #1856a4;
+  --primary-soft: #12304f;
+  --primary-soft-ink: #8fc3ef;
+  --surface-0: #0b1524;
+  --surface-100: #111f33;
+  --surface-200: #172a44;
+  --border: #243a57;
+  --border-strong: #51698a;
+  --ink: #e8eef7;
+  --ink-muted: #9fb0c7;
+  --ink-subtle: #7f93ae;
+  --sidebar-bg: #081427;
+  --sidebar-ink: #b3c3da;
+  --sidebar-active: #15325a;
+  --sidebar-indicator: #5ec8e0;
+  --focus-ring: #5ec8e0;
+  --success: #9ad69c;
+  --success-soft: #18361a;
+  --warning: #f2c46b;
+  --warning-soft: #3a2a0c;
+  --danger: #f59a90;
+  --danger-soft: #3d1a18;
+  --danger-solid: #c0362c;
+  --cat-hogar: #8fc3ef;
+  --cat-hogar-soft: #12304f;
+  --cat-tyt: #7fd6e6;
+  --cat-tyt-soft: #0f3440;
+  --cat-operacion: #f2c46b;
+  --cat-operacion-soft: #3a2a0c;
+  --cat-tecnologia: #aab0f5;
+  --cat-tecnologia-soft: #23264f;
+  --cat-movil: #f3a0c1;
+  --cat-movil-soft: #40182a;
+  --wa-wallpaper: #0b141a;
+  --wa-header: #202c33;
+  --wa-in: #202c33;
+  --wa-out: #005c4b;
+  --wa-ink: #e9edef;
+  --wa-meta: #c9d3d8;
+  --code-bg: #0d1a2b;
+  --code-heading: #8fc3ef;
+  --code-marker: #7fd6e6;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --scrim: rgba(0, 0, 0, 0.6);
+    --brand-navy: #5b93d9;
+    --brand-blue: #4ea3e6;
+    --primary: #1372b8;
+    --primary-hover: #1856a4;
+    --primary-soft: #12304f;
+    --primary-soft-ink: #8fc3ef;
+    --surface-0: #0b1524;
+    --surface-100: #111f33;
+    --surface-200: #172a44;
+    --border: #243a57;
+    --border-strong: #51698a;
+    --ink: #e8eef7;
+    --ink-muted: #9fb0c7;
+    --ink-subtle: #7f93ae;
+    --sidebar-bg: #081427;
+    --sidebar-ink: #b3c3da;
+    --sidebar-active: #15325a;
+    --sidebar-indicator: #5ec8e0;
+    --focus-ring: #5ec8e0;
+    --success: #9ad69c;
+    --success-soft: #18361a;
+    --warning: #f2c46b;
+    --warning-soft: #3a2a0c;
+    --danger: #f59a90;
+    --danger-soft: #3d1a18;
+    --danger-solid: #c0362c;
+    --cat-hogar: #8fc3ef;
+    --cat-hogar-soft: #12304f;
+    --cat-tyt: #7fd6e6;
+    --cat-tyt-soft: #0f3440;
+    --cat-operacion: #f2c46b;
+    --cat-operacion-soft: #3a2a0c;
+    --cat-tecnologia: #aab0f5;
+    --cat-tecnologia-soft: #23264f;
+    --cat-movil: #f3a0c1;
+    --cat-movil-soft: #40182a;
+    --wa-wallpaper: #0b141a;
+    --wa-header: #202c33;
+    --wa-in: #202c33;
+    --wa-out: #005c4b;
+    --wa-ink: #e9edef;
+    --wa-meta: #c9d3d8;
+    --code-bg: #0d1a2b;
+    --code-heading: #8fc3ef;
+    --code-marker: #7fd6e6;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.6);
+  }
+}
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --font-display: Outfit, "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --font-wa: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-0);
+  color: var(--ink);
+  font: 400 14px/20px var(--font-sans);
+  word-spacing: 0.05em; /* Plus Jakarta Sans tiene un espacio estrecho */
+  -webkit-font-smoothing: antialiased;
+}

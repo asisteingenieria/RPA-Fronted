@@ -1,0 +1,24 @@
+<!-- @dsCard group="Pantallas" height=760 width=1440 page -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>preview</title>
+<style>#root{padding:0} .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center} .col{display:flex;flex-direction:column;gap:12px} .g2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;align-items:start} </style></head>
+<body class="ai-scope">
+<div id="root" class="ai-scope"></div>
+<script>
+var A = window.AsisteRPA, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(A.Shell,{active:'usuarios',attention:2},
+ h(A.PageHead,{title:'Usuarios del panel',sub:'5 usuarios · 2 ADMIN · 3 OPERADOR',actions:h(A.Button,{variant:'primary',icon:'plus'},'Crear usuario')}),
+ h(A.OneTimeSecret,{title:'Contraseña temporal de lcastro',value:'Tq7-#mRv-29Lp',help:'Se muestra una sola vez. Deberá cambiarla en su primer ingreso.'}),
+ h('div',{className:'ai-card'},
+  h('table',{className:'ai-table'},h('thead',null,h('tr',null,['Usuario','Rol','Estado','Cambio de contraseña','Último ingreso','Creado por','Acciones'].map(function(x){return h('th',{key:x},x);}))),
+   h('tbody',null,[['KB','kbermudez','Kevin Bermúdez (tú)','ADMIN',['success','Activo'],'—','Hoy 07:58','sistema',true],['JP','jperez','Juan Pérez','ADMIN',['success','Activo'],'—','Hoy 08:12','kbermudez'],['LC','lcastro','Laura Castro','OPERADOR',['success','Activo'],'Pendiente','Nunca','kbermudez'],['AR','arojas','Ana Rojas','OPERADOR',['warning','Bloqueado hasta 15:42'],'—','Ayer 18:20','jperez'],['MG','mgomez','Mario Gómez','OPERADOR',['neutral','Inactivo'],'—','02/10/2026','kbermudez']].map(function(r){
+    return h('tr',{key:r[1]},h('td',null,h('div',{className:'ai-person'},h('span',{className:'ai-avatar ai-avatar--sm'},r[0]),h('div',null,h('div',{className:'ai-person-name'},r[2]),h('div',{className:'ai-person-sub'},r[1])))),
+     h('td',null,h('span',{className:'ai-select',style:{height:32},title:r[8]?'No puedes quitarte el rol a ti mismo':undefined},r[3],r[8]?h(A.Icon,{name:'lock',size:12}):h(A.Icon,{name:'chevronDown',size:13}))),
+     h('td',null,h(A.Badge,{tone:r[4][0]},r[4][1])),h('td',null,r[5]==='Pendiente'?h(A.Badge,{tone:'info'},'Pendiente'):h('span',{className:'ai-muted'},'—')),h('td',{className:'ai-muted'},r[6]),h('td',{className:'ai-muted'},r[7]),
+     h('td',{className:'ai-td-actions'},h('span',{className:'ai-row',style:{flexWrap:'nowrap',gap:6}},h(A.Button,{size:'sm',variant:'ghost',icon:'key'},'Restablecer'),h(A.Button,{size:'sm',variant:r[4][1]==='Inactivo'?'secondary':'danger-ghost',disabled:!!r[8],reason:r[8]?'No puedes desactivarte a ti mismo':undefined},r[4][1]==='Inactivo'?'Activar':'Desactivar'))));}))),
+  h('div',{className:'ai-table-foot'},h('span',null,'Desactivar o restablecer cierra las sesiones abiertas del usuario.'),h('span',null,'Siempre debe quedar al menos un ADMIN activo.')))
+));
+</script>
+</body>
+</html>

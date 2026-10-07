@@ -1,0 +1,50 @@
+<!-- @dsCard group="Pantallas" height=1010 width=1440 page -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>preview</title>
+<style>#root{padding:0} .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center} .col{display:flex;flex-direction:column;gap:12px} .g2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;align-items:start} </style></head>
+<body class="ai-scope">
+<div id="root" class="ai-scope"></div>
+<script>
+var A = window.AsisteRPA, h = React.createElement, F = React.Fragment;
+var GUION = "# Rol\nEres Sofía, asesora virtual de ventas de planes pospago de Claro Colombia por WhatsApp.\nTono cercano, entusiasta y profesional. Trato de \"tú\". Una sola pregunta por mensaje.\n\n## MENU\n- El menú A–D lo envía el sistema. Si el cliente responde con texto libre, ayúdale a elegir una letra.\n- Si elige D (soporte o facturación), indícale el canal *611 y despídete con amabilidad.\n\n## PERFIL\n- Pregunta en este orden: nombre, operador actual (solo opción A) y uso principal.\n- Uso principal: trabajo, estudio o uso diario. No supongas el uso si no lo dice.\n\n## OFERTA\n- Uso trabajo: presenta primero {{OFERTA:M1}}.\n- Uso estudio o diario: presenta {{OFERTA:M2}} y menciona las apps ilimitadas.\n- Si pide algo más económico, ofrece hasta 3 opciones sin repetir la anterior.\n- Cuéntale que el plan de 55 GB cuesta $ 60.900.\n\n## OBJECIONES\n- Precio: reconoce la duda y ofrece el plan más económico del proceso.\n- \"Lo voy a pensar\": resume el beneficio principal y pregunta qué le falta para decidir.\n- Cobertura: confirma cobertura 5G en ciudades principales y pregunta su ciudad.\n- Cliente molesto: sin emojis, discúlpate una vez y ofrece hablar con un asesor.\n\n## AUTORIZACION\n- Pide la autorización de consulta de datos con el texto legal del sistema.\n- Solo \"SÍ AUTORIZO\" cuenta como consentimiento. Cualquier otra respuesta es duda o negativa.\n- Si no autoriza, agradece y cierra sin insistir.";
+ReactDOM.createRoot(document.getElementById('root')).render(h(A.Shell,{active:'agente',attention:2},
+ h(A.AgentBar,{unsaved:true,hasErrors:true}),
+ h(A.Tabs,{active:'conf',sub:true,items:[{id:'conf',label:'Configuración',icon:'settings'},{id:'test',label:'Probar agente',icon:'flask'},{id:'hist',label:'Historial',icon:'history',count:15},{id:'eval',label:'Evaluaciones',icon:'checkCircle'}]}),
+ h('div',{className:'ai-agent-grid'},
+  h('div',{className:'ai-col'},
+   h(A.PromptEditor,{value:GUION,height:612,toolbar:h('div',{className:'ai-settings-row'},
+     h('span',{className:'ai-select'},h(A.Icon,{name:'cpu',size:15}),'claude-sonnet-4.5',h(A.Icon,{name:'chevronDown',size:14})),
+     h('span',{className:'ai-slider',title:'Temperatura 0–0,3'},h(A.Icon,{name:'thermo',size:15}),'Temperatura',h('span',{className:'ai-slider-track'},h('span',{style:{width:'33%'}}),h('i',{style:{left:'33%'}})),h('b',{className:'ai-num'},'0,1')),
+     h('span',{className:'ai-select is-locked',title:'Fijo'},h(A.Icon,{name:'globe',size:15}),'Español (Colombia)',h(A.Icon,{name:'lock',size:13})))})),
+  h('div',{className:'ai-col'},
+   h(A.Accordion,{items:[
+    {title:'Ajustes del agente',icon:'settings',open:true,body:h(F,null,
+      h('div',{className:'ai-field'},h('label',{className:'ai-label'},'Nombre del agente'),h('div',{className:'ai-input'},'Sofía')),
+      h('div',{className:'ai-field'},h('label',{className:'ai-label'},'Nombre de empresa'),h('div',{className:'ai-input'},'Claro Colombia')),
+      h('div',{className:'ai-field'},h('label',{className:'ai-label'},'Descripción de la empresa'),h('div',{className:'ai-textarea'},'Operadora líder en Colombia, parte de América Móvil, con cobertura 5G en las principales ciudades.')))},
+    {title:'Mensaje de bienvenida',icon:'message',open:true,body:h(F,null,
+      h('div',{className:'ai-textarea',style:{minHeight:56}},'¡Hola! Con Claro lo puedes todo. 💪📱 Mi nombre es Sofía.'),
+      h('div',{className:'ai-menu-fixed'},h('div',{className:'ai-row',style:{gap:6,fontWeight:600,color:'var(--ink)'}},h(A.Icon,{name:'lock',size:13}),'Menú fijo (el flujo depende de las letras)'),'🅐 Cambiarme de operador',h('br',null),'🅑 Pasarme de recargas a plan pospago',h('br',null),'🅒 Quiero un número completamente nuevo',h('br',null),'🅓 Ayuda con soporte o facturación'),
+      h('span',{className:'ai-help'},'Sin promesas («gratis», «te regalo»), enlaces ni marcadores.'))},
+    {title:'Catálogo',icon:'package',badge:h(A.Badge,{tone:'neutral',icon:'lock'},'Solo lectura'),open:true,body:h(F,null,
+      h(A.Segmented,{active:'mig',items:[{id:'port',label:'Portabilidad'},{id:'mig',label:'Migración'},{id:'nueva',label:'Línea nueva'}]}),
+      h('div',null,[['M1','GB ILIMITADAS','70 GB compartir · $ 99.900'],['M2','65 GB','Amazon Prime · $ 54.900'],['M3','45 GB','Apps ilimitadas · $ 44.900']].map(function(p){return h('div',{key:p[0],className:'ai-plan'},h('code',null,p[0]),h('span',{className:'ai-plan-name'},p[1]),h(A.Button,{size:'sm',variant:'ghost',icon:'plus'},'Insertar'),h('span',{className:'ai-plan-sub'},p[2]));})),
+      h('span',{className:'ai-help'},'Inserta {{OFERTA:CÓDIGO}} en el cursor del guion. Los precios nunca se escriben en el guion.'))},
+    {title:'Reglas del sistema',icon:'shield',badge:h(A.Badge,{tone:'neutral',icon:'lock'},'No editable')},
+    {title:'Funciones del motor',icon:'cpu',badge:h(A.Badge,{tone:'neutral',icon:'lock'},'En código')}
+   ]})),
+  h('div',{className:'ai-col'},
+   h(A.Panel,{title:'Probar agente',icon:'flask',flush:true,actions:h(A.IconButton,{icon:'rotate',label:'Reiniciar conversación'})},
+    h('div',{style:{padding:'12px 16px',borderBottom:'1px solid var(--border)'}},h(A.Segmented,{active:'ed',items:[{id:'ed',label:'Lo que hay en el editor'},{id:'pub',label:'Versión publicada'}]})),
+    h('div',{style:{padding:12}},h(A.WhatsAppPreview,{height:560,messages:[
+     {from:'client',text:'b',time:'15:20'},
+     {from:'bot',text:'¡Perfecto! 😊 ¿Con quién tengo el gusto?',time:'15:20',origin:'modelo',meta:'1,4 s'},
+     {from:'client',text:'Laura',time:'15:20'},
+     {from:'bot',text:'Un gusto, Laura. ¿El plan lo vas a usar mayormente para trabajo, estudio o uso diario?',time:'15:21',origin:'modelo',meta:'1,1 s'},
+     {from:'client',text:'trabajo',time:'15:21'},
+     {from:'bot',text:'Tengo para ti nuestro plan más completo:\n• *GB ILIMITADAS* + 70 GB para compartir\n• Amazon Prime\n• *$ 99.900* al mes\n¿Te gustaría quedarte con este plan?',time:'15:21',origin:'plantilla',meta:'ficha {{OFERTA:M1}}'}]})))))
+));
+</script>
+</body>
+</html>

@@ -10,8 +10,8 @@ export default defineConfig(({ mode }) => {
     resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
     server: {
       port: 5180,
-      // Con VITE_ADMIN_API_URL, /admin va a la API real del robot (apps/api de RobotRPA).
-      proxy: env.VITE_ADMIN_API_URL ? { '/admin': env.VITE_ADMIN_API_URL } : undefined,
+      // /admin va a la API del robot (apps/api de RobotRPA). Mismo origen para la cookie de sesión.
+      proxy: { '/admin': env.ADMIN_API_URL || 'http://localhost:3000' },
     },
     test: { environment: 'node' },
   };

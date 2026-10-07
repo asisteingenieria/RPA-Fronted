@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 export type ThemePref = 'claro' | 'oscuro' | 'sistema';
-const KEY = 'panel-sofia:tema';
+const KEY = 'asiste-rpa:tema';
 
 function readPref(): ThemePref {
   try {

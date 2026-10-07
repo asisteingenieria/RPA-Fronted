@@ -1,0 +1,1 @@
+Código de las maquetas, solo para consultar medidas y estructura. Cada `Pantalla*.html` es un fragmento que espera `tokens.css`, `bundle.css`, React 18 y `bundle.js` precargados (no se abre directo en el navegador). No copies este código al proyecto: usa `templates/`.

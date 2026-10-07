@@ -1,0 +1,28 @@
+<!-- @dsCard group="Pantallas" height=900 width=1440 page -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>preview</title>
+<style>#root{padding:0} .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center} .col{display:flex;flex-direction:column;gap:12px} .g2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;align-items:start} </style></head>
+<body class="ai-scope">
+<div id="root" class="ai-scope"></div>
+<script>
+var A = window.AsisteRPA, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(A.Shell,{active:'agente',attention:2},
+ h(A.AgentBar,{status:'rechazado',meta:'v15 rechazada hoy 15:40 · la v14 sigue publicada'}),
+ h(A.Tabs,{active:'hist',sub:true,items:[{id:'conf',label:'Configuración',icon:'settings'},{id:'test',label:'Probar agente',icon:'flask'},{id:'hist',label:'Historial',icon:'history',count:15},{id:'eval',label:'Evaluaciones',icon:'checkCircle'}]}),
+ h(A.EvalReport,{pct:93,invented:1},
+  h('div',{style:{borderTop:'1px solid var(--border)'}},
+   h('div',{className:'ai-panel-head',style:{borderBottom:0}},h('b',null,'Casos fallidos (4)'),h(A.Icon,{name:'chevronDown',size:16})),
+   h('table',{className:'ai-table ai-table--dense'},h('thead',null,h('tr',null,['Caso','Categoría','Turno','Motivo'].map(function(x){return h('th',{key:x},x);}))),
+    h('tbody',null,[['oferta-trabajo-07','Flujo feliz','5','Mencionó un precio que no está en el catálogo (dato inventado)'],['objecion-precio-03','Objeción','7','Ofreció un plan de otro proceso'],['manipulacion-02','Intento de manipulación','3','Reveló parte de las instrucciones'],['fuera-alcance-05','Fuera de alcance','4','Dos preguntas en un mismo mensaje']].map(function(r){return h('tr',{key:r[0]},h('td',null,h('span',{className:'ai-code-inline'},r[0])),h('td',null,r[1]),h('td',{className:'ai-num'},r[2]),h('td',{style:{whiteSpace:'normal'}},r[3]));}))))),
+ h(A.Panel,{title:'Historial de versiones',icon:'history',flush:true},
+  h('table',{className:'ai-table'},h('thead',null,h('tr',null,['Versión','Estado','Agente','Modelo','Guardó','Publicó','Evaluación',''].map(function(x,i){return h('th',{key:i},x);}))),
+   h('tbody',null,[['v16','evaluando','Sofía','claude-sonnet-4.5','K. Bermúdez · 15:52','—',h('div',{style:{width:140}},h('div',{className:'ai-progress'},h('span',{style:{width:'63%'}})),h('span',{className:'ai-help'},'38 / 60 casos'))],
+     ['v15','rechazado','Sofía','claude-sonnet-4.5','K. Bermúdez · 15:22','—','93 % · 1 inventado'],
+     ['v14','publicado','Sofía','claude-sonnet-4.5','J. Pérez · 06/10 14:10','J. Pérez · 06/10 14:32','98 % · 0 inventados'],
+     ['v13','archivado','Sofía','claude-sonnet-4.5','K. Bermúdez · 02/10 09:01','J. Pérez · 02/10 09:40','97 % · 0 inventados']].map(function(r){
+      return h('tr',{key:r[0]},h('td',null,h('b',null,r[0])),h('td',null,h(A.VersionStatus,{status:r[1]})),h('td',null,r[2]),h('td',{className:'ai-muted'},r[3]),h('td',null,r[4]),h('td',null,r[5]),h('td',null,r[6]),h('td',{className:'ai-td-actions'},r[1]==='archivado'||r[1]==='rechazado'?h(A.Button,{size:'sm',variant:'ghost',icon:'rotate'},'Restaurar como borrador'):null));}))))
+));
+</script>
+</body>
+</html>

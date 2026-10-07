@@ -1,0 +1,31 @@
+<!-- @dsCard group="Pantallas" height=900 width=1440 page -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>preview</title>
+<style>#root{padding:0} .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center} .col{display:flex;flex-direction:column;gap:12px} .g2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;align-items:start} </style></head>
+<body class="ai-scope">
+<div id="root" class="ai-scope"></div>
+<script>
+var A = window.AsisteRPA, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(A.Shell,{active:'robots',attention:2},
+ h(A.PageHead,{title:'Robots',sub:'4 robots · 3 en línea · 1 con problemas',actions:h(F,null,h(A.Segmented,{active:'hoy',items:[{id:'hoy',label:'Hoy'},{id:'7d',label:'Últimos 7 días'},{id:'30d',label:'Últimos 30 días'}]}),h(A.Button,{icon:'download'},'Descargar instalador'),h(A.Button,{variant:'primary',icon:'plus'},'Agregar robot'))}),
+ h('div',{className:'ai-kpi-strip'},
+  h('div',null,h('span',{className:'ai-kpi-icon',style:{background:'var(--success-soft)',color:'var(--success)'}},h(A.Icon,{name:'bot',size:18})),h('div',null,h('div',{className:'ai-kpi-label'},'En línea'),h('div',{className:'ai-kpi-value'},'3'))),
+  h('div',null,h('span',{className:'ai-kpi-icon',style:{background:'var(--danger-soft)',color:'var(--danger)'}},h(A.Icon,{name:'wifiOff',size:18})),h('div',null,h('div',{className:'ai-kpi-label'},'Con problemas'),h('div',{className:'ai-kpi-value'},'1'))),
+  h('div',null,h('span',{className:'ai-kpi-icon'},h(A.Icon,{name:'package',size:18})),h('div',null,h('div',{className:'ai-kpi-label'},'Paquete publicado'),h('div',{className:'ai-row',style:{gap:8}},h('span',{className:'ai-kpi-value'},'v1.8.2'),h(A.Badge,{tone:'success',icon:'shield'},'Firma válida')))),
+  h('div',null,h('div',null,h('div',{className:'ai-kpi-label'},'38 MB · 05/10/2026'),h('div',{style:{marginTop:6}},h(A.Button,{size:'sm',icon:'upload'},'Actualizar todos'))))),
+ h('div',{className:'ai-card'},
+  h('div',{className:'ai-toolbar'},h('div',{className:'ai-search'},h(A.Icon,{name:'search',size:15}),'Buscar robot o equipo…'),h('span',{className:'ai-filter'},h(A.Icon,{name:'plus',size:14}),'Estado')),
+  h('table',{className:'ai-table ai-table--dense ai-table--compact'},h('thead',null,h('tr',null,['Robot','Estado','Última señal','Versión','Chats','Resp. p95','Conv.','Ventas','Conversión','Errores / inciertos','Acciones'].map(function(x){return h('th',{key:x},x);}))),
+   h('tbody',null,[['robot-01','PC-VENTAS-01','en-linea',null,'hace 4 s','v1.8.2',3,'1,8 s',41,7,'17,1 %','0 / 0'],['robot-02','PC-VENTAS-02','en-linea',null,'hace 3 s','v1.8.2',2,'2,1 s',38,6,'15,8 %','1 / 1'],['robot-04','PC-VENTAS-04','reconectando','Pausado','hace 12 s','v1.8.1',0,'—',22,4,'18,2 %','0 / 0'],['robot-03','PC-VENTAS-03','caido',null,'hace 7 min','v1.8.2',0,'—',47,6,'12,8 %','3 / 0']].map(function(r){
+    return h('tr',{key:r[0]},h('td',null,h('div',{className:'ai-machine'},h('span',{className:'ai-machine-icon'},h(A.Icon,{name:'monitor',size:16})),h('div',null,h('div',{className:'ai-person-name'},r[0]),h('div',{className:'ai-person-sub'},r[1])))),
+     h('td',null,h('div',{className:'ai-row',style:{gap:6}},h(A.RobotState,{status:r[2]}),r[3]&&h(A.Badge,{tone:'info',icon:'pause'},r[3]))),h('td',{className:'ai-muted'},r[4]),
+     h('td',null,r[5],r[5]==='v1.8.1'&&h('span',{className:'ai-help'},' · actualizando')),
+     h('td',null,h('span',{className:'ai-mini-progress',style:{width:56}},h('span',{style:{width:(r[6]/3*100)+'%'}})),h('span',{className:'ai-num'},r[6]+' / 3')),
+     h('td',{className:'ai-num'},r[7]),h('td',{className:'ai-num'},r[8]),h('td',{className:'ai-num'},r[9]),h('td',{className:'ai-num'},r[10]),h('td',{className:'ai-num'},r[11]),
+     h('td',{className:'ai-td-actions'},h('span',{className:'ai-row-actions'},h(A.IconButton,{icon:r[3]?'play':'pause',label:r[3]?'Reanudar':'Pausar'}),h(A.IconButton,{icon:'key',label:'Credenciales'}),h(A.IconButton,{icon:'eye',label:'Ver detalle'}),h(A.IconButton,{icon:'more',label:'Más acciones'}))));}))),
+  h('div',{className:'ai-table-foot'},h('span',null,'Capacidad: 3 chats simultáneos por robot'),h('span',null,'Rango: hoy')))
+));
+</script>
+</body>
+</html>

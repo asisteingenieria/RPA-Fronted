@@ -1,0 +1,38 @@
+<!-- @dsCard group="Pantallas" height=900 width=1440 page -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>preview</title>
+<style>#root{padding:0} .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center} .col{display:flex;flex-direction:column;gap:12px} .g2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;align-items:start} </style></head>
+<body class="ai-scope">
+<div id="root" class="ai-scope"></div>
+<script>
+var A = window.AsisteRPA, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(A.Shell,{active:'agente',attention:2},
+ h(A.AgentBar,{status:'publicado',meta:'v14 publicada 06/10/2026 14:32 por J. Pérez · sin cambios'}),
+ h(A.Tabs,{active:'test',sub:true,items:[{id:'conf',label:'Configuración',icon:'settings'},{id:'test',label:'Probar agente',icon:'flask'},{id:'hist',label:'Historial',icon:'history',count:15},{id:'eval',label:'Evaluaciones',icon:'checkCircle'}]}),
+ h('div',{style:{display:'grid',gridTemplateColumns:'300px minmax(0,1fr) 340px',gap:20,alignItems:'start'}},
+  h('div',{className:'ai-col'},
+   h(A.Panel,{title:'Qué probar'},h('div',{className:'col'},
+    h('label',{className:'ai-row',style:{gap:10}},h('span',{className:'ai-check is-on',style:{borderRadius:'50%',boxShadow:'inset 0 0 0 3px var(--surface-100)'}}),h('span',null,h('b',null,'Lo que hay en el editor'),h('br'),h('span',{className:'ai-help'},'Incluso sin guardar · solo ADMIN'))),
+    h('label',{className:'ai-row',style:{gap:10}},h('span',{className:'ai-check',style:{borderRadius:'50%'}}),h('span',null,h('b',null,'Versión publicada'),h('br'),h('span',{className:'ai-help'},'v14 · lo que ven los clientes'))),
+    h(A.Button,{icon:'rotate'},'Reiniciar conversación'))),
+   h(A.Callout,{tone:'info',icon:'shield'},'Simulación con el motor real: máquina de estados, catálogo y validadores. No toca Abaya ni guarda nada.')),
+  h(A.WhatsAppPreview,{height:700,locked:'Conversación terminada: transferida al backoffice. Reinicia para probar otra vez.',messages:[
+   {from:'client',text:'b',time:'15:20'},
+   {from:'bot',text:'¡Perfecto! 😊 ¿Con quién tengo el gusto?',time:'15:20',origin:'modelo',meta:'claude-sonnet · 1,4 s'},
+   {from:'client',text:'Laura, trabajo',time:'15:21'},
+   {from:'bot',text:'Un gusto, Laura. Tengo para ti nuestro plan más completo:\n• *GB ILIMITADAS* + 70 GB para compartir\n• Amazon Prime\n• *$ 99.900* al mes\n¿Te gustaría quedarte con este plan?',time:'15:21',origin:'regenerado',meta:'claude-sonnet · 3,2 s'},
+   {from:'client',text:'sí, me interesa',time:'15:22'},
+   {from:'bot',text:'¡Excelente elección, Laura! 🎉 Para continuar necesito tu autorización para consultar tus datos (Ley 1581 de 2012). Responde *SÍ AUTORIZO* para continuar.',time:'15:22',origin:'plantilla',meta:'texto legal v3'},
+   {from:'client',text:'SÍ AUTORIZO',time:'15:23'},
+   {event:'Consentimiento registrado',tone:'ok',icon:'checkCircle'},
+   {from:'bot',text:'¡Gracias, Laura! Un asesor de Claro continúa con tu solicitud en este mismo chat. 🙌',time:'15:23',origin:'plantilla',meta:'0 ms'},
+   {event:'Transferencia al backoffice (con nota interna)',tone:'info',icon:'send'}]}),
+  h('div',{className:'ai-col'},
+   h(A.Panel,{title:'Estado de la simulación'},
+    h('dl',{className:'ai-kv'},h('dt',null,'Etapa actual'),h('dd',null,'TRANSFERENCIA'),h('dt',null,'Proceso'),h('dd',null,'Migración (B)'),h('dt',null,'Nombre'),h('dd',null,'Laura'),h('dt',null,'Uso'),h('dd',null,'Trabajo'),h('dt',null,'Plan ofrecido'),h('dd',null,h('span',{className:'ai-code-inline'},'M1')),h('dt',null,'Plan aceptado'),h('dd',null,h('span',{className:'ai-code-inline'},'M1')),h('dt',null,'Proveedor'),h('dd',null,'Anthropic · claude-sonnet-4.5'))),
+   h(A.Panel,{title:'Etapas'},h(A.StageTrack,{current:'TRANSFERENCIA'}))))
+));
+</script>
+</body>
+</html>

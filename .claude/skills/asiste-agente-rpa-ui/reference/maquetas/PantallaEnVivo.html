@@ -1,0 +1,35 @@
+<!-- @dsCard group="Pantallas" height=1080 width=1440 page -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>preview</title>
+<style>#root{padding:0} .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center} .col{display:flex;flex-direction:column;gap:12px} .g2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;align-items:start} </style></head>
+<body class="ai-scope">
+<div id="root" class="ai-scope"></div>
+<script>
+var A = window.AsisteRPA, h = React.createElement, F = React.Fragment;
+ReactDOM.createRoot(document.getElementById('root')).render(h(A.Shell,{active:'envivo',attention:2,role:'OPERADOR',initials:'LC',user:'Laura Castro'},
+ h(A.PageHead,{title:'Operación en vivo',sub:'Campaña Claro Móvil por WhatsApp · Abaya',actions:h(F,null,h('span',{className:'ai-live'},'En vivo · actualizado hace 6 s'),h(A.Button,{icon:'refresh'},'Actualizar'))}),
+ h('div',{className:'ai-hero-status'},h('span',{className:'lamp'},h(A.Icon,{name:'activity',size:26})),h('div',null,h('h2',null,'Robot operando'),h('p',null,'3 de 4 robots en línea · última señal hace 4 s · versión del agente v14')),h(A.Button,{variant:'danger',size:'xl',icon:'power',style:{width:'auto',padding:'0 24px'}},'Apagado de emergencia')),
+ h('div',{className:'ai-kpis ai-kpis--5'},
+  h(A.Kpi,{label:'Conversaciones activas',value:'7',bar:78,foot:'7 de 9 cupos'}),
+  h(A.Kpi,{label:'En transferencia',value:'1',foot:'En cola de backoffice'}),
+  h(A.Kpi,{label:'Ventas hoy',value:'23',foot:'Conversión 15,5 %'}),
+  h(A.Kpi,{label:'Transferidas al backoffice',value:'22',foot:'1 pendiente de confirmar'}),
+  h(A.Kpi,{label:'Requieren revisión',value:'2',tone:'danger',foot:'1 envío incierto · 1 en revisión'})),
+ h('div',{className:'g2'},
+  h(A.Panel,{title:'Requiere atención',icon:'alert',badge:h(A.Count,{alert:true},'4'),flush:true},
+   [['danger','wifiOff','robot-03 caído','Sesión DOWN tras 3 fallos seguidos · desde 15:02','Habilitar reintento'],
+    ['danger','alert','Envío incierto · chat AB-77120','robot-02 · 2 intentos · no se reintenta solo','Ver detalle'],
+    ['warning','eye','Conversación en revisión · chat AB-77093','robot-01 · etapa AUTORIZACION · desde 14:51','Ver detalle'],
+    ['info','bell','Respuesta lenta del proveedor LLM','p95 6,8 s en los últimos 10 min · alerta enviada a Teams','Ver alerta']].map(function(r,i){
+     return h('div',{key:i,className:'ai-attn'},h('span',{className:'ai-attn-icon '+r[0]},h(A.Icon,{name:r[1],size:18})),h('div',null,h('b',null,r[2]),h('small',null,r[3])),i===0?h(A.Button,{size:'sm',icon:'refresh',disabled:true,reason:'Requiere rol ADMIN'},r[4]):h(A.Button,{size:'sm',variant:'ghost',iconRight:'chevronRight'},r[4]));})),
+  h(A.Panel,{title:'Sesiones de los robots',icon:'bot',flush:true},
+   h('table',{className:'ai-table ai-table--dense'},h('thead',null,h('tr',null,['Robot','Estado','Heartbeat','Fallos'].map(function(x){return h('th',{key:x},x);}))),
+    h('tbody',null,[['robot-01','ACTIVE','hace 4 s','0'],['robot-02','ACTIVE','hace 3 s','0'],['robot-03','DOWN','hace 7 min','3'],['robot-04','RELOGGING','hace 12 s','1']].map(function(r){return h('tr',{key:r[0]},h('td',null,h('b',null,r[0])),h('td',null,h(A.SessionState,{status:r[1]})),h('td',{className:'ai-muted'},r[2]),h('td',null,r[3]));}))))),
+ h(A.Panel,{title:'Errores recientes del robot',icon:'xCircle',flush:true,actions:h('span',{className:'ai-help'},'Últimos 20')},
+  h('table',{className:'ai-table ai-table--dense'},h('thead',null,h('tr',null,['Hora','Robot','Acción','Chat','Resultado'].map(function(x){return h('th',{key:x},x);}))),
+   h('tbody',null,[['15:02:41','robot-03','login','—','ERROR'],['14:58:10','robot-02','enviar','AB-77120','UNCERTAIN'],['14:31:07','robot-01','transferir','AB-76988','ERROR']].map(function(r,i){return h('tr',{key:i},h('td',{className:'ai-num'},r[0]),h('td',null,r[1]),h('td',null,r[2]),h('td',{className:'ai-num'},r[3]),h('td',null,h(A.Badge,{tone:r[4]==='ERROR'?'danger':'warning'},r[4])));}))))
+));
+</script>
+</body>
+</html>

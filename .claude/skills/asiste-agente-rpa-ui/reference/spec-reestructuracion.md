@@ -39,7 +39,7 @@ Sirve para decidir qué incluir en el rediseño:
 | Guardar / Publicar | ✅ Sí | Publicar exige pasar la suite de evaluación (ver 3.1). |
 | Base de conocimiento ("Brain") editable con precios | ⚠️ Distinto | Aquí el **catálogo** se ve en solo lectura; se carga por script desde los datos oficiales de Claro. Los precios **nunca** van en el prompt (regla de negocio). Candidato: pantalla de catálogo (solo lectura o carga de archivo por ADMIN). |
 | Simulación con cliente sintético automático (Retell: "Prueba de simulación" con identidad y objetivo) | ⚠️ Parcial | Existe la **suite de evaluación** de 60 conversaciones guionadas que corre al publicar, pero no hay pantalla para verla/editarla. Candidato: pestaña "Evaluaciones" con el último reporte. |
-| Análisis de conversación / Historial de conversaciones reales | ❌ No | Por protección de datos (Ley 1581) el panel **no muestra contenido de mensajes** de clientes: solo estados, conteos e ids. Si se diseña, debe ser con datos enmascarados y bajo decisión de Claro. |
+| Análisis de conversación / Historial de conversaciones reales | ✅ Sí (D-002) | Pestaña **Trazabilidad**: conversaciones completas sin enmascarar, autorizadas por Claro, solo para ADMIN y con cada apertura y exportación en Auditoría. Spec: `reference/trazabilidad/SPEC-TRAZABILIDAD.md`. |
 | Métricas | ✅ Parcial | Operación (conteos del día) y Robots (rendimiento por robot y rango de fechas). No hay gráficos. Candidato: tablero con gráficos. |
 | Canales | ❌ No aplica | Solo existe el canal Abaya (WhatsApp vía Abaya). |
 | Funciones / herramientas (end_chat, transferencia de agentes, extraer variables, código) | ⚠️ En código | Transferir, cerrar, escalar y extraer datos del cliente existen, pero los decide la máquina de estados, no se configuran en la UI (regla: el flujo lo decide el código). |
@@ -219,7 +219,8 @@ Contraseña actual + nueva + confirmación, con la política explicada.
 ## 7. Reglas que el diseño debe respetar (no negociables)
 
 1. **Sin datos personales ni contenido de mensajes reales** en el panel: solo estados, conteos,
-   ids y tiempos. (La única excepción es el chat de **simulación**, que es texto de prueba.)
+   ids y tiempos. Excepciones: el chat de **simulación** (texto de prueba) y la pestaña
+   **Trazabilidad** (autorización de Claro, D-002; solo ADMIN; auditada).
 2. **Precios, planes y textos legales no se editan en el guion**: el catálogo se muestra aparte, en
    solo lectura.
 3. **El flujo de la conversación no es configurable** visualmente (no hay editor de flujos tipo

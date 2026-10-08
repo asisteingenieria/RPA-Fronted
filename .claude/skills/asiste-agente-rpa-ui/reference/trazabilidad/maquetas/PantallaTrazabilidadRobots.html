@@ -1,0 +1,49 @@
+<!-- @dsCard group="Trazabilidad" height=900 width=1440 page subtitle="Rendimiento comparado por robot en el rango elegido" -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>preview</title>
+<style>#root{padding:0} .tipcell{min-width:180px}</style></head>
+<body class="ai-scope">
+<div id="root" class="ai-scope"></div>
+<script>
+var A = window.AsisteRPA, h = React.createElement, F = React.Fragment;
+var R = [
+ ['robot-01','PC-VENTAS-01',41,[8,16,4,9,1,2,1,0],'19,5 %','3,6 s','0','2',''],
+ ['robot-02','PC-VENTAS-02',38,[6,15,3,8,2,2,1,1],'15,8 %','3,9 s','1','3',''],
+ ['robot-04','PC-VENTAS-04',22,[4,9,3,4,0,1,1,0],'18,2 %','3,8 s','0','1',''],
+ ['robot-03','PC-VENTAS-03',47,[5,21,4,10,1,2,2,2],'10,6 %','6,1 s','2','7','worst']
+];
+var CODES=['TRANSFERRED_BACKOFFICE','CLOSED_NO_SALE','CLOSED_SUPPORT','CLOSED_INACTIVE','NEEDS_REVIEW','ACTIVE','WAITING_CONSENT','TRANSFERRING'];
+function pct(n,t){ return (Math.round(n/t*1000)/10).toString().replace('.',',')+' %'; }
+ReactDOM.createRoot(document.getElementById('root')).render(h(A.Shell,{active:'trazabilidad',attention:2},
+ h(A.PageHead,{title:'Trazabilidad',sub:'Cada conversación del robot con el cliente, completa, con su tipificación y su recorrido',actions:h(F,null,
+   h(A.Segmented,{active:'7d',items:[{id:'hoy',label:'Hoy'},{id:'7d',label:'7 días'},{id:'30d',label:'30 días'},{id:'custom',label:'Personalizado'}]}),
+   h(A.Button,{icon:'download'},'Exportar CSV'))}),
+ h(A.Tabs,{active:'rend',sub:true,items:[{id:'conv',label:'Conversaciones',icon:'messages',count:148},{id:'rend',label:'Rendimiento por robot',icon:'chart'}]}),
+ h(A.Callout,{tone:'warning'},h('b',null,'robot-03 convierte menos y responde más lento'),' que el resto en los últimos 7 días: 10,6 % de conversión y 1.ª respuesta p95 de 6,1 s. ',h('a',{className:'ai-link'},'Ver sus conversaciones sin venta')),
+ h('div',{className:'ai-card'},
+  h('table',{className:'ai-table ai-table--dense ai-table--compact'},
+   h('thead',null,h('tr',null,['Robot','Conv.','Tipificación','Ventas','Sin venta','Inactividad','Revisión','Conversión','1.ª resp. p95','Inciertos','Regeneradas',''].map(function(x,i){return h('th',{key:i},x);}))),
+   h('tbody',null,R.map(function(r){
+    var t=r[2], c=r[3], w=r[8]==='worst';
+    return h('tr',{key:r[0]},
+     h('td',null,h('div',{className:'ai-machine'},h('span',{className:'ai-machine-icon'},h(A.Icon,{name:'monitor',size:16})),h('div',null,h('div',{className:'ai-person-name'},r[0]),h('div',{className:'ai-person-sub'},r[1])))),
+     h('td',{className:'ai-num'},t),
+     h('td',{className:'tipcell'},h(A.TypificationBar,{thin:true,legend:false,items:CODES.map(function(k,i){return {code:k,count:c[i]};})})),
+     h('td',{className:'ai-num'},c[0]),
+     h('td',{className:'ai-num'},pct(c[1],t)),
+     h('td',{className:'ai-num'},pct(c[3],t)),
+     h('td',{className:'ai-num'},c[4]),
+     h('td',{className:'ai-num'},h('span',{className:w?'ai-worst':r[0]==='robot-01'?'ai-best':''},r[4])),
+     h('td',{className:'ai-num'},h('span',{className:w?'ai-worst':''},r[5])),
+     h('td',{className:'ai-num'},r[6]),
+     h('td',{className:'ai-num'},r[7]),
+     h('td',null,h(A.Button,{size:'sm',variant:'ghost',iconRight:'chevronRight'},'Ver')));
+   }))),
+  h('div',{className:'ai-table-foot'},h('span',null,'148 conversaciones · 4 robots'),h('span',null,'Rango: últimos 7 días'))),
+ h(A.Panel,{title:'Distribución total por tipificación',icon:'chart'},h(A.TypificationBar,{items:CODES.map(function(k,i){return {code:k,count:R.reduce(function(a,r){return a+r[3][i];},0)};})})),
+ h('div',{className:'ai-legend'},h('span',null,h('b',{className:'ai-best'},'') ,'Mejor valor del rango'),h('span',null,h('b',{className:'ai-worst'},''),'Peor valor del rango (siempre con texto en la alerta)'))
+));
+</script>
+</body>
+</html>

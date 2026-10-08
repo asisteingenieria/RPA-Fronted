@@ -7,6 +7,7 @@ import { AppShell } from '@/layout/app-shell';
 import { ChangePasswordPage, ForcedChangePage, LoginPage } from '@/pages/login';
 import { EnVivoPage } from '@/pages/en-vivo';
 import type { RobotsSearch } from '@/pages/robots';
+import { parseTraceSearch } from '@/lib/trace-search';
 import { Empty, ErrorState } from '@/components/rpa/common';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -15,6 +16,8 @@ const RobotsPage = lazyRouteComponent(() => import('@/pages/robots'), 'RobotsPag
 const AgentePage = lazyRouteComponent(() => import('@/pages/agente'), 'AgentePage');
 const UsuariosPage = lazyRouteComponent(() => import('@/pages/usuarios'), 'UsuariosPage');
 const AuditoriaPage = lazyRouteComponent(() => import('@/pages/auditoria'), 'AuditoriaPage');
+const TrazabilidadPage = lazyRouteComponent(() => import('@/pages/trazabilidad'), 'TrazabilidadPage');
+const TrazabilidadDetallePage = lazyRouteComponent(() => import('@/pages/trazabilidad-detalle'), 'TrazabilidadDetallePage');
 
 function Splash() {
   return (
@@ -107,6 +110,14 @@ const routes = [
     },
   }),
   createRoute({ getParentRoute: () => shell, path: '/agente/$tab', component: AgentePage }),
+  // Trazabilidad (D-002): sin el permiso la página explica el motivo (no redirige).
+  createRoute({ getParentRoute: () => shell, path: '/trazabilidad', component: TrazabilidadPage, validateSearch: parseTraceSearch }),
+  createRoute({
+    getParentRoute: () => shell,
+    path: '/trazabilidad/$id',
+    component: TrazabilidadDetallePage,
+    validateSearch: parseTraceSearch,
+  }),
   createRoute({
     getParentRoute: () => shell,
     path: '/usuarios',

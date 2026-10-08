@@ -7,6 +7,15 @@
  * servidor (ver vite.config.ts y .env.example).
  */
 import type { Role } from './roles';
+import type {
+  DeliveryStatus,
+  Etapa,
+  LlmResult,
+  Proceso,
+  Tipificacion,
+  TraceEventKind,
+  TraceFlag,
+} from './tipificaciones';
 
 export type { Role };
 
@@ -203,10 +212,16 @@ export interface EvalSummary {
   regenRate?: string;
   fallbackRate?: string;
   problems?: string[];
-  failedCases?: { id: string; failures: string[] }[];
+  failedCases?: { id: string; group?: string; failures: string[]; transcript?: { role: 'cliente' | 'bot'; text: string }[] }[];
   startedAt?: string;
   finishedAt?: string;
+  /** D-004: avance mientras evalúa. */
+  progress?: { done: number; total: number | null };
+  verdict?: EvalVerdict;
 }
+
+/** D-004: resultado de evaluar una versión (evidencia, D-005). null = sin evaluar; RUNNING = evaluando. */
+export type EvalVerdict = 'OK' | 'WARN' | 'BLOCKED' | 'ERROR' | 'CANCELLED' | 'RUNNING';
 
 export interface AgentVersionInfo {
   id: string;
@@ -220,9 +235,43 @@ export interface AgentVersionInfo {
   publishedBy: string | null;
   publishedAt: string | null;
   evalSummary: EvalSummary | null;
+  /** D-004 */
+  evalVerdict: EvalVerdict | null;
+  evaluatedAt: string | null;
+  changeNote: string | null;
+  publishReason: string | null;
+  appliedToOpen: boolean;
+  /** Solo en el historial: conversaciones reales atendidas y pruebas guardadas. */
+  conversations?: number;
+  tests?: number;
 }
 
 export type AgentVersion = AgentVersionInfo & AgentFields;
+
+/** D-004: prueba de «Probar agente» guardada en el historial de una versión. */
+export interface AgentTestRecord {
+  id: string;
+  versionId: string | null;
+  version: number | null;
+  source: 'editor' | 'published';
+  note: string | null;
+  transcript: { role: 'customer' | 'bot' | 'event'; text: string }[];
+  finalStage: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface PublishResult {
+  version: number;
+  status: AgentStatus;
+  /** Resultado que tenía al publicarse (D-005: no frena la publicación). */
+  verdict: EvalVerdict | null;
+  applyToOpen: boolean;
+  openConversations: number;
+  /** D-005: qué pasó con la evaluación de evidencia después de publicar. */
+  evaluation?: 'STARTED' | 'RUNNING' | 'DONE' | 'SKIPPED' | 'UNAVAILABLE' | 'FAILED';
+  evaluationBlocker?: string | null;
+}
 
 export interface AgentPlan {
   code: string;
@@ -254,6 +303,9 @@ export interface AgentOverview {
   provider: string;
   canPublish: boolean;
   publishBlocker: string | null;
+  /** D-005: evaluar (evidencia) requiere un LLM real con API key. */
+  canEvaluate?: boolean;
+  evaluateBlocker?: string | null;
   temperatureApplies: boolean;
   defaultModel: string | null;
   models: string[];
@@ -262,13 +314,14 @@ export interface AgentOverview {
 
 export interface AgentTestState {
   stage: string;
-  profile: Record<string, string>;
+  /** Datos del perfil (texto) y marcas del flujo (sí/no, D-003): se devuelven en cada turno. */
+  profile: Record<string, string | boolean>;
   history: { role: 'customer' | 'bot'; text: string }[];
 }
 
 export interface AgentTestResult {
   stage: string;
-  profile: Record<string, string>;
+  profile: Record<string, string | boolean>;
   replies: string[];
   events: string[];
   validation: string;
@@ -414,6 +467,160 @@ export interface NewSourceOptions {
   proceso?: SaleProcess | '';
 }
 
+/* ───── Trazabilidad (D-002): /admin/conversations ───── */
+
+export type TraceRange = 'hoy' | '7d' | '30d' | 'custom';
+
+export interface ConversationFilters {
+  range: TraceRange;
+  /** AAAA-MM-DD (día de Bogotá), solo con range = custom. */
+  from?: string;
+  to?: string;
+  robots?: string[];
+  tipificaciones?: Tipificacion[];
+  procesos?: Proceso[];
+  etapasFinales?: Etapa[];
+  pasoPorRevision?: boolean;
+  /** D-004: versión del guion. */
+  version?: number;
+  /** Id del chat de Abaya, nombre del cliente o texto de los mensajes (rango ≤ 30 días). */
+  q?: string;
+  cursor?: string;
+  limit?: number;
+}
+
+export interface ConversationListItem {
+  id: string;
+  createdAt: string;
+  /** Fin: null mientras sigue abierta. */
+  updatedAt: string | null;
+  closed: boolean;
+  robotUser: string;
+  abayaChatId: string;
+  customerName: string | null;
+  status: Tipificacion;
+  stage: string;
+  process: Proceso | null;
+  planCode: string | null;
+  inbound: number;
+  outbound: number;
+  firstResponseMs: number | null;
+  durationMs: number | null;
+  flags: TraceFlag[];
+  /** El contenido se borró por retención. */
+  contentPurged: boolean;
+  /** D-004: versión del guion con la que se atendió (null = antes de fijar versiones). */
+  agentVersion: number | null;
+}
+
+export interface ConversationKpis {
+  total: number;
+  sales: number;
+  conversionPct: number;
+  firstResponseP50Ms: number | null;
+  firstResponseP95Ms: number | null;
+  avgDurationMs: number | null;
+  byTipificacion: Partial<Record<Tipificacion, number>>;
+}
+
+export interface ConversationListResponse {
+  items: ConversationListItem[];
+  total: number;
+  offset: number;
+  nextCursor: string | null;
+  prevCursor: string | null;
+  kpis: ConversationKpis;
+  /** CONVERSATION_RETENTION_DAYS; null = sin plazo definido. */
+  retentionDays: number | null;
+}
+
+export interface TraceMessage {
+  id: string;
+  from: 'client' | 'bot';
+  text: string;
+  sentAt: string;
+  delivery?: { status: DeliveryStatus; attempts: number };
+  /** Desde que llegó la ráfaga del cliente hasta que Abaya confirmó el envío. */
+  responseMs?: number | null;
+}
+export interface TraceEvent {
+  at: string;
+  kind: TraceEventKind;
+  detail?: string;
+}
+export interface LlmCallRow {
+  at: string;
+  stage: string;
+  provider: string;
+  model: string;
+  latencyMs: number;
+  tokens: number;
+  result: LlmResult;
+}
+export interface RpaActionRow {
+  at: string;
+  action: string;
+  result: string;
+  durationMs: number;
+  traceRef: string | null;
+}
+
+export interface ConversationDetail extends ConversationListItem {
+  contentPurgedAt: string | null;
+  /** Recorrido aproximado (etapas de las llamadas al modelo + la final), con retrocesos. */
+  stagePath: string[];
+  messages: TraceMessage[];
+  events: TraceEvent[];
+  profile: { name: string | null; currentOperator: string | null; declaredUse: string | null; process: Proceso | null };
+  sale: { planCode: string; backofficeSummary: string | null; transferredAt: string | null; internalNoteOk: boolean } | null;
+  consent: { answer: string | null; at: string; legalTemplateVersion: string; hash: string; chainVerified: boolean } | null;
+  brainVersion: string | null;
+  knowledgeUsage: { at: string; planCode: string; priceShown: number | null }[];
+  llmCalls: LlmCallRow[];
+  rpaActions: RpaActionRow[];
+  /** Posición en el filtro (solo si se pidió con los filtros de la lista). */
+  nav: { index: number; total: number; prevId: string | null; nextId: string | null } | null;
+}
+
+export interface RobotPerformanceRow {
+  robotUser: string;
+  hostname: string | null;
+  total: number;
+  byTipificacion: Partial<Record<Tipificacion, number>>;
+  sales: number;
+  conversionPct: number;
+  firstResponseP95Ms: number | null;
+  uncertainSends: number;
+  regenerations: number;
+}
+export interface RobotPerformanceResponse {
+  rows: RobotPerformanceRow[];
+  total: number;
+}
+
+/** El texto de los mensajes está cifrado: el servidor solo busca dentro en rangos ≤ 30 días. */
+export const TEXT_SEARCH_MAX_DAYS = 30;
+
+/** Filtros → query string de /admin/conversations (arrays separados por coma). */
+export function conversationQuery(f: ConversationFilters): string {
+  const p = new URLSearchParams();
+  p.set('range', f.range);
+  if (f.range === 'custom') {
+    if (f.from) p.set('from', f.from);
+    if (f.to) p.set('to', f.to);
+  }
+  if (f.robots?.length) p.set('robot', f.robots.join(','));
+  if (f.tipificaciones?.length) p.set('status', f.tipificaciones.join(','));
+  if (f.procesos?.length) p.set('process', f.procesos.join(','));
+  if (f.etapasFinales?.length) p.set('stage', f.etapasFinales.join(','));
+  if (f.pasoPorRevision != null) p.set('reviewed', String(f.pasoPorRevision));
+  if (f.version) p.set('version', String(f.version));
+  if (f.q?.trim()) p.set('q', f.q.trim());
+  if (f.cursor) p.set('cursor', f.cursor);
+  p.set('limit', String(f.limit ?? 25));
+  return p.toString();
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -520,8 +727,21 @@ export const api = {
   agentVersions: () => request<AgentVersionInfo[]>('/admin/agent/versions'),
   agentVersion: (id: string) => request<AgentVersion>(`/admin/agent/versions/${enc(id)}`),
   reviewAgent: (fields: AgentFields) => request<{ issues: AgentIssue[] }>('/admin/agent/review', send(fields)),
-  saveAgentDraft: (fields: AgentFields) => request<AgentVersion>('/admin/agent/draft', send(fields, 'PUT')),
-  publishAgent: () => request<{ version: number; status: AgentStatus }>('/admin/agent/draft/publish', send({})),
+  /** D-004: con `evaluate` se lanza la suite sobre lo guardado (y se cancela la que estuviera en curso). */
+  saveAgentDraft: (fields: AgentFields, opts: { evaluate?: boolean; changeNote?: string } = {}) =>
+    request<AgentVersion>('/admin/agent/draft', send({ ...fields, ...opts }, 'PUT')),
+  evaluateAgentVersion: (id: string) => request<AgentVersion>(`/admin/agent/versions/${enc(id)}/evaluate`, send({})),
+  /** D-004: publica al instante una versión evaluada (OK, o WARN con motivo). */
+  publishAgent: (opts: { versionId?: string; reason?: string; applyToOpen?: boolean; evaluate?: boolean } = {}) =>
+    request<PublishResult>('/admin/agent/draft/publish', send(opts)),
+  agentTests: (versionId: string) => request<AgentTestRecord[]>(`/admin/agent/versions/${enc(versionId)}/tests`),
+  saveAgentTest: (body: {
+    versionId?: string;
+    source: 'editor' | 'published';
+    transcript: AgentTestRecord['transcript'];
+    finalStage: string;
+    note?: string;
+  }) => request<AgentTestRecord>('/admin/agent/tests', send(body)),
   testAgent: (body: {
     source: 'editor' | 'published';
     fields?: AgentFields;
@@ -573,10 +793,50 @@ export const api = {
     request<{ ok: true }>(`/admin/knowledge/agents/default/brains/${enc(brainId)}`, { method: 'PUT' }),
   disconnectBrain: (brainId: string) =>
     request<{ ok: true }>(`/admin/knowledge/agents/default/brains/${enc(brainId)}`, { method: 'DELETE' }),
+
+  // Trazabilidad (D-002). Abrir un detalle o exportar queda en Auditoría (lo escribe el servidor).
+  conversations: (f: ConversationFilters) =>
+    request<ConversationListResponse>(`/admin/conversations?${conversationQuery(f)}`),
+  conversationStats: (f: ConversationFilters) =>
+    request<RobotPerformanceResponse>(`/admin/conversations/stats?${conversationQuery(f)}`),
+  /** `ref` = id interno o id del chat de Abaya. Con filtros devuelve `nav` (anterior/siguiente). */
+  conversation: (ref: string, f?: ConversationFilters) =>
+    request<ConversationDetail>(`/admin/conversations/${enc(ref)}${f ? `?${conversationQuery(f)}` : ''}`),
 };
 
 /** Descargas directas (el navegador manda la cookie de sesión). */
 export const urls = {
   robotPackage: '/admin/robots/package',
   trace: (robotUser: string, ref: string) => `/admin/robots/${enc(robotUser)}/traces/${enc(ref)}`,
+  /** CSV del filtro, sin el texto de los mensajes. */
+  conversationsCsv: (f: ConversationFilters) =>
+    `/admin/conversations/export?${conversationQuery({ ...f, cursor: undefined })}`,
+  /** Transcripción completa de una conversación. */
+  transcript: (id: string) => `/admin/conversations/export?id=${enc(id)}`,
 };
+
+/**
+ * Descarga autenticada (cookie de sesión) que informa el error del servidor si falla; el archivo
+ * se guarda con el nombre que manda el servidor.
+ */
+export async function download(path: string, fallbackName: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(path, { credentials: 'same-origin', headers: { 'x-requested-with': 'abaya-panel' } });
+  } catch {
+    throw new ApiError(0, 'No hay conexión con el servidor del robot.');
+  }
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { message?: unknown };
+    throw new ApiError(res.status, typeof body.message === 'string' ? body.message : `HTTP ${res.status}`);
+  }
+  const name = /filename="([^"]+)"/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? fallbackName;
+  const href = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = href;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 1_000);
+}

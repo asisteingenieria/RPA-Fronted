@@ -1,6 +1,7 @@
 /**
  * Layout del panel (kit asiste-agente-rpa-ui): TopNav navy de 60 px + banda roja si el robot está
- * detenido + contenido. Navegación: En vivo · Robots · Agente | Usuarios · Auditoría (solo ADMIN).
+ * detenido + contenido. Navegación: En vivo · Robots · Agente · Trazabilidad | Usuarios · Auditoría
+ * (solo ADMIN). Trazabilidad la usa el ADMIN; el OPERADOR la ve deshabilitada con candado y motivo.
  * Debajo de 1280 px las pestañas quedan con ícono y tooltip; debajo de 768 px, menú hamburguesa.
  */
 import { useEffect, useState } from 'react';
@@ -11,9 +12,11 @@ import {
   Bot,
   Clock,
   KeyRound,
+  Lock,
   LogOut,
   Menu,
   MessageSquareText,
+  MessagesSquare,
   Monitor,
   Moon,
   Power,
@@ -25,6 +28,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatClock, fmtTime, initials } from '@/lib/format';
+import { viewConversationsReason } from '@/lib/roles';
 import { useTheme, type ThemePref } from '@/lib/theme';
 import { useSessionActions, useUser } from '@/auth/session';
 import { useOverview, useReview } from '@/hooks/queries';
@@ -44,15 +48,18 @@ import {
 import markWhite from '@/assets/asiste-mark-white.png';
 
 interface NavItem {
-  to: '/en-vivo' | '/robots' | '/agente' | '/usuarios' | '/auditoria';
+  to: '/en-vivo' | '/robots' | '/agente' | '/trazabilidad' | '/usuarios' | '/auditoria';
   label: string;
   icon: LucideIcon;
   admin?: boolean;
+  /** Solo ADMIN, pero se ve para todos: al OPERADOR, deshabilitada con motivo (no se oculta). */
+  trace?: boolean;
 }
 const NAV: NavItem[] = [
   { to: '/en-vivo', label: 'En vivo', icon: Activity },
   { to: '/robots', label: 'Robots', icon: Bot },
   { to: '/agente', label: 'Agente', icon: MessageSquareText },
+  { to: '/trazabilidad', label: 'Trazabilidad', icon: MessagesSquare, trace: true },
   { to: '/usuarios', label: 'Usuarios', icon: Users, admin: true },
   { to: '/auditoria', label: 'Auditoría', icon: ScrollText, admin: true },
 ];
@@ -64,7 +71,7 @@ function LiveClock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <span className="inline-flex h-8 items-center gap-2 rounded-full bg-on-navy-soft px-3 text-[13px] leading-4 font-semibold whitespace-nowrap text-on-navy tabular-nums max-xl:hidden">
+    <span className="inline-flex h-8 items-center gap-2 rounded-full bg-on-navy-soft px-3 text-[13px] leading-4 font-semibold whitespace-nowrap text-on-navy tabular-nums max-[1420px]:hidden">
       <Clock {...ICON} className="size-[15px]" aria-hidden />
       {formatClock(now)}
       <span className="sr-only">hora de Bogotá</span>
@@ -126,6 +133,7 @@ function TopNav({ stopped, unknown, attention }: { stopped: boolean; unknown: bo
   const path = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => setOpen(false), [path]);
   const items = NAV.filter((n) => !n.admin || me.role === 'ADMIN');
+  const traceLocked = viewConversationsReason(me);
 
   return (
     <header
@@ -164,6 +172,26 @@ function TopNav({ stopped, unknown, attention }: { stopped: boolean; unknown: bo
       >
         {items.map((n, i) => {
           const sep = n.admin && items[i - 1] && !items[i - 1]!.admin;
+          const locked = n.trace ? traceLocked : undefined;
+          if (locked) {
+            return (
+              <Tooltip key={n.to}>
+                <TooltipTrigger asChild>
+                  <span
+                    role="link"
+                    aria-disabled="true"
+                    tabIndex={0}
+                    className="flex h-full cursor-not-allowed items-center gap-2 px-2.5 text-[13.5px] leading-5 font-medium whitespace-nowrap text-navy-ink opacity-55 max-md:h-11"
+                  >
+                    <n.icon {...ICON} className="size-4 shrink-0" aria-hidden />
+                    <span className="max-xl:sr-only max-md:not-sr-only">{n.label}</span>
+                    <Lock {...ICON} className="size-3 shrink-0" aria-label="requiere rol ADMIN" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{locked}</TooltipContent>
+              </Tooltip>
+            );
+          }
           const link = (
             <Link
               to={n.to}

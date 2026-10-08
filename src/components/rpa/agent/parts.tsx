@@ -1,9 +1,9 @@
 /** Piezas de la pantalla Agente (estilo Retell; kit: reference/screens/agente.*.png e historial.*.png). */
 import { useState, type ReactNode } from 'react';
-import { ChevronDown, Copy, FlaskConical, Lock, Plus, Save, XCircle, CheckCircle2, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, Ban, ChevronDown, Copy, FlaskConical, Lock, Plus, Rocket, Save, XCircle, CheckCircle2, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import type { AgentPlan, AgentStatus, EvalSummary } from '@/lib/api';
+import type { AgentPlan, AgentStatus, EvalSummary, EvalVerdict } from '@/lib/api';
 import { fmtMs, formatCOP, formatDuration, formatPct } from '@/lib/format';
 import { PROCESS_LABEL } from '@/lib/labels';
 import { ActionButton, CampaignChip, ICON, Segmented } from '../common';
@@ -14,18 +14,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 export function AgentBar(p: {
   name: string;
   status: AgentStatus;
+  /** D-004: resultado de la evaluación de la versión en curso (si es un borrador). */
+  verdict?: ReactNode;
   meta: ReactNode;
   unsaved: boolean;
   saving?: boolean;
+  evaluating?: boolean;
   publishing?: boolean;
   /** Motivo si no se puede editar (rol). */
   editReason?: string;
-  /** Motivo si no se puede guardar (errores, evaluación en curso…). */
+  /** Motivo si no se puede guardar (errores del guion…). */
   saveReason?: string;
-  /** Motivo si no se puede publicar (proveedor simulado, sin borrador, cambios sin guardar…). */
+  /** Mostrar «Evaluar» (hay un borrador guardado sin evaluar o cuya evaluación no terminó). */
+  canEvaluate?: boolean;
+  evaluateReason?: string;
+  /** Motivo si no se puede publicar (rol, errores del guion, nada que publicar). */
   publishReason?: string;
   onDiscard: () => void;
   onSave: () => void;
+  onEvaluate: () => void;
   onPublish: () => void;
 }) {
   return (
@@ -35,6 +42,7 @@ export function AgentBar(p: {
           <span className="font-display text-lg leading-6 font-semibold text-ink">{p.name}</span>
           <CampaignChip />
           <VersionStatus status={p.status} />
+          {p.verdict}
         </div>
         <span className="text-xs leading-4 font-medium text-ink-subtle">{p.meta}</span>
       </div>
@@ -49,11 +57,16 @@ export function AgentBar(p: {
           Descartar
         </ActionButton>
         <ActionButton variant="secondary" icon={Save} loading={p.saving} reason={p.editReason ?? p.saveReason} disabled={!p.unsaved} onClick={p.onSave}>
-          Guardar
+          Guardar…
         </ActionButton>
-        {/* No existe "publicar sin probar": este botón SIEMPRE dispara la suite de evaluación. */}
-        <ActionButton icon={FlaskConical} loading={p.publishing} reason={p.editReason ?? p.publishReason} onClick={p.onPublish}>
-          Publicar con evaluación
+        {p.canEvaluate && (
+          <ActionButton variant="secondary" icon={FlaskConical} loading={p.evaluating} reason={p.editReason ?? p.evaluateReason} onClick={p.onEvaluate}>
+            Evaluar
+          </ActionButton>
+        )}
+        {/* D-005: publicar es inmediato; la evaluación corre después como evidencia. */}
+        <ActionButton icon={Rocket} loading={p.publishing} reason={p.editReason ?? p.publishReason} onClick={p.onPublish}>
+          Publicar
         </ActionButton>
       </div>
     </div>
@@ -224,22 +237,55 @@ export const evalPct = (s: EvalSummary) => (s.cases ? ((s.passed ?? 0) / s.cases
 export const evalDuration = (s: EvalSummary) =>
   s.startedAt && s.finishedAt ? formatDuration(new Date(s.finishedAt).getTime() - new Date(s.startedAt).getTime()) : '—';
 
-export function EvalReport({ version, summary, published }: { version: number; summary: EvalSummary; published?: boolean }) {
+const REPORT_TONE: Record<'ok' | 'warn' | 'bad', { border: string; head: string; icon: LucideIcon }> = {
+  ok: { border: 'border-success', head: 'bg-success-soft text-success', icon: CheckCircle2 },
+  warn: { border: 'border-warning', head: 'bg-warning-soft text-warning', icon: AlertTriangle },
+  bad: { border: 'border-danger', head: 'bg-danger-soft text-danger', icon: XCircle },
+};
+
+/**
+ * Reporte de la suite de una versión. D-004: el título depende del resultado (`verdict`); las
+ * versiones anteriores a D-004 usan `published` (pasó y se publicó) o rechazada.
+ */
+export function EvalReport({
+  version,
+  summary,
+  published,
+  verdict,
+  badge,
+}: {
+  version: number;
+  summary: EvalSummary;
+  published?: boolean;
+  verdict?: EvalVerdict | null;
+  badge?: ReactNode;
+}) {
   const [open, setOpen] = useState(true);
+  const [shown, setShown] = useState<string | null>(null);
   const pct = evalPct(summary);
   const invented = summary.invented ?? null;
   const failed = summary.failedCases ?? [];
-  const Icon = published ? CheckCircle2 : XCircle;
+  const tone = verdict === 'OK' || (!verdict && published) ? 'ok' : verdict === 'WARN' ? 'warn' : 'bad';
+  const t = REPORT_TONE[tone];
+  const title = verdict
+    ? {
+        OK: `La v${version} pasó la evaluación${published ? ' y está publicada' : ''}`,
+        WARN: `La v${version} tiene alertas: no inventó datos, pero está bajo la meta`,
+        BLOCKED: `La v${version} inventó datos en la evaluación`,
+        ERROR: `La evaluación de la v${version} no terminó`,
+        CANCELLED: `La evaluación de la v${version} se canceló`,
+        RUNNING: `La v${version} se está evaluando`,
+      }[verdict]
+    : published
+      ? `La v${version} pasó la evaluación y se publicó`
+      : `La v${version} no se publicó: la evaluación la rechazó`;
+  const Icon = verdict === 'BLOCKED' ? Ban : t.icon;
   return (
-    <section className={cn('overflow-hidden rounded-lg border bg-surface-100 shadow-card', published ? 'border-success' : 'border-danger')}>
-      <div className={cn('flex flex-wrap items-center gap-3 px-5 py-3.5', published ? 'bg-success-soft text-success' : 'bg-danger-soft text-danger')}>
+    <section className={cn('overflow-hidden rounded-lg border bg-surface-100 shadow-card', t.border)}>
+      <div className={cn('flex flex-wrap items-center gap-3 px-5 py-3.5', t.head)}>
         <Icon {...ICON} className="size-5" aria-hidden />
-        <b className="font-display text-base leading-[22px] font-semibold">
-          {published ? `La v${version} pasó la evaluación y se publicó` : `La v${version} no se publicó: la evaluación la rechazó`}
-        </b>
-        <span className="ml-auto">
-          <VersionStatus status={published ? 'PUBLISHED' : 'REJECTED'} />
-        </span>
+        <b className="font-display text-base leading-[22px] font-semibold">{title}</b>
+        <span className="ml-auto">{badge ?? <VersionStatus status={published ? 'PUBLISHED' : 'REJECTED'} />}</span>
       </div>
       {(summary.problems ?? []).length > 0 && (
         <ul className="m-0 flex list-disc flex-col gap-1 border-b py-3 pr-5 pl-10 text-[13px] text-danger">
@@ -301,7 +347,30 @@ export function EvalReport({ version, summary, published }: { version: number; s
                     <TableCell className="align-top">
                       <code className="rounded-[5px] bg-cat-tyt-soft px-1.5 py-0.5 font-mono text-xs font-semibold text-code-marker">{c.id}</code>
                     </TableCell>
-                    <TableCell className="whitespace-normal">{c.failures.join(' · ')}</TableCell>
+                    <TableCell className="whitespace-normal">
+                      {c.failures.join(' · ')}
+                      {!!c.transcript?.length && (
+                        <div className="mt-1.5">
+                          <button
+                            type="button"
+                            aria-expanded={shown === c.id}
+                            onClick={() => setShown((x) => (x === c.id ? null : c.id))}
+                            className="cursor-pointer text-xs font-semibold text-primary-soft-ink hover:underline"
+                          >
+                            {shown === c.id ? 'Ocultar la conversación' : 'Ver la conversación'}
+                          </button>
+                          {shown === c.id && (
+                            <ol className="m-0 mt-2 flex list-none flex-col gap-1 rounded-md bg-surface-200 p-3 text-xs">
+                              {c.transcript.map((m, i) => (
+                                <li key={i} className="whitespace-pre-wrap">
+                                  <b className={m.role === 'bot' ? 'text-primary-soft-ink' : 'text-ink'}>{m.role === 'bot' ? 'Robot' : 'Cliente'}:</b> {m.text}
+                                </li>
+                              ))}
+                            </ol>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

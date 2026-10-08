@@ -4,13 +4,14 @@
  * controles deshabilitados con el motivo).
  */
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bot,
   Download,
   Eye,
   KeyRound,
+  Lock,
   Monitor,
   MoreHorizontal,
   Package,
@@ -39,7 +40,7 @@ import {
 } from '@/lib/api';
 import { fmtAgo, fmtDateTime, fmtMs, fmtPct, fmtTime, formatBytes, formatDate, formatInt } from '@/lib/format';
 import { actionLabel, CONV_LABEL, RANGE_LABEL, UPDATE_LABEL } from '@/lib/labels';
-import { reasonFor } from '@/lib/roles';
+import { reasonFor, viewConversationsReason } from '@/lib/roles';
 import { useUser } from '@/auth/session';
 import { keys, LIVE_MS, useNow, useRobots } from '@/hooks/queries';
 import {
@@ -58,6 +59,7 @@ import {
   SkeletonRows,
 } from '@/components/rpa/common';
 import { ActionResult, ROBOT_STATUS, RobotState, SessionState, Status } from '@/components/rpa/status';
+import { ChatLink, Typification, TypificationBar } from '@/components/rpa/trazabilidad/parts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -855,6 +857,8 @@ function RobotDetailSheet({ robotUser, range, onRange, onClose }: { robotUser: s
                 </Table>
               </Panel>
 
+              <RobotConversations robotUser={r.robotUser} range={range} />
+
               <Panel title={`Rendimiento por acción · ${RANGE_LABEL[range].toLowerCase()}`} flush>
                 <Table>
                   <TableHeader>
@@ -967,7 +971,9 @@ function RobotDetailSheet({ robotUser, range, onRange, onClose }: { robotUser: s
                         <TableRow key={`${a.createdAt}-${i}`}>
                           <TableCell>{fmtDateTime(a.createdAt)}</TableCell>
                           <TableCell>{actionLabel(a.action)}</TableCell>
-                          <TableCell>{a.abayaChatId ?? '—'}</TableCell>
+                          <TableCell>
+                            <ChatLink chatId={a.abayaChatId} />
+                          </TableCell>
                           <TableCell>
                             <ActionResult result={a.result} />
                           </TableCell>
@@ -983,5 +989,72 @@ function RobotDetailSheet({ robotUser, range, onRange, onClose }: { robotUser: s
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/**
+ * Trazabilidad (D-002) dentro del detalle del robot: tipificaciones del rango y sus últimas
+ * conversaciones, con enlace a la lista ya filtrada. Para el OPERADOR, el motivo.
+ */
+function RobotConversations({ robotUser, range }: { robotUser: string; range: Range }) {
+  const me = useUser();
+  const locked = viewConversationsReason(me);
+  const q = useQuery({
+    queryKey: ['conversations', 'robot', robotUser, range],
+    queryFn: () => api.conversations({ range, robots: [robotUser], limit: 5 }),
+    enabled: !locked,
+  });
+  return (
+    <Panel
+      title="Conversaciones de este robot"
+      flush
+      actions={
+        !locked && (
+          <Link
+            to="/trazabilidad"
+            search={{ robot: robotUser, ...(range !== 'hoy' ? { rango: range } : {}) }}
+            className="text-[13px] font-semibold text-primary-soft-ink hover:underline"
+          >
+            Ver todas en Trazabilidad
+          </Link>
+        )
+      }
+    >
+      {locked ? (
+        <div className="p-5">
+          <Callout tone="info" icon={Lock}>
+            {locked}
+          </Callout>
+        </div>
+      ) : q.isLoading ? (
+        <SkeletonRows rows={3} cols={3} />
+      ) : q.isError || !q.data ? (
+        <ErrorState message="No se pudieron cargar las conversaciones." onRetry={() => void q.refetch()} retrying={q.isFetching} />
+      ) : q.data.total === 0 ? (
+        <p className="m-0 px-5 py-6 text-center text-[13px] text-ink-muted">Sin conversaciones en el rango.</p>
+      ) : (
+        <>
+          <div className="border-b p-5">
+            <TypificationBar counts={q.data.kpis.byTipificacion} />
+          </div>
+          <Table>
+            <TableBody>
+              {q.data.items.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="whitespace-nowrap">{fmtDateTime(c.createdAt)}</TableCell>
+                  <TableCell>
+                    <ChatLink chatId={c.abayaChatId} />
+                  </TableCell>
+                  <TableCell>{c.customerName ?? '—'}</TableCell>
+                  <TableCell className="text-right">
+                    <Typification code={c.status} short />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </>
+      )}
+    </Panel>
   );
 }

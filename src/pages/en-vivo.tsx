@@ -30,6 +30,7 @@ import { reasonFor } from '@/lib/roles';
 import { useUser } from '@/auth/session';
 import { keys, useNow, useOverview, useReview, useRobots } from '@/hooks/queries';
 import { ActionButton, Callout, Count, Empty, ErrorState, ICON, Kpi, LiveIndicator, PageHead, Panel, SkeletonCard, SkeletonRows } from '@/components/rpa/common';
+import { ChatLink } from '@/components/rpa/trazabilidad/parts';
 import { ActionResult, SessionState } from '@/components/rpa/status';
 import { EmergencyStop } from '@/components/rpa/emergency';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -170,7 +171,7 @@ export function EnVivoPage() {
       priority: 2,
       title: (
         <>
-          Envío incierto · chat <span className="tabular-nums">{m.conversation.abayaChatId}</span>
+          Envío incierto · chat <ChatLink chatId={m.conversation.abayaChatId} />
         </>
       ),
       sub: `${m.conversation.robotUser} · ${m.attempts} ${m.attempts === 1 ? 'intento' : 'intentos'} · no se reintenta solo: verifica en Abaya si llegó`,
@@ -185,7 +186,7 @@ export function EnVivoPage() {
       priority: 3,
       title: (
         <>
-          Conversación en revisión · chat <span className="tabular-nums">{c.abayaChatId}</span>
+          Conversación en revisión · chat <ChatLink chatId={c.abayaChatId} />
         </>
       ),
       sub: `${c.robotUser} · etapa ${c.stage} · desde ${fmtTime(c.updatedAt)}`,
@@ -379,7 +380,9 @@ export function EnVivoPage() {
                     <TableCell>{fmtTime(e.createdAt, true)}</TableCell>
                     <TableCell>{e.robotUser}</TableCell>
                     <TableCell>{actionLabel(e.action)}</TableCell>
-                    <TableCell>{e.abayaChatId ?? '—'}</TableCell>
+                    <TableCell>
+                      <ChatLink chatId={e.abayaChatId} />
+                    </TableCell>
                     <TableCell>
                       <ActionResult result={e.result} />
                     </TableCell>

@@ -21,7 +21,7 @@ const ORIGIN: Record<string, ReplyOrigin> = {
 
 export const TERMINAL: Record<string, string> = {
   TRANSFERENCIA: 'transferida al backoffice',
-  SOPORTE: 'redirigida a soporte (*611)',
+  SOPORTE: 'cerrada después de darle los canales de atención (*611)',
   CIERRE_SIN_VENTA: 'cerrada sin venta',
   ESCALAR: 'escalada a un asesor humano',
 };
@@ -33,6 +33,14 @@ export const PROFILE_LABEL: Record<string, string> = {
   usage: 'Uso',
   offeredPlanCode: 'Plan ofrecido',
   planCode: 'Plan aceptado',
+  supportRedirected: 'Soporte',
+  authorizationDeclined: 'Autorización',
+};
+
+/** Marcas del flujo (D-003) en palabras para «Estado de la simulación». */
+export const PROFILE_FLAG_TEXT: Record<string, string> = {
+  supportRedirected: 'Se le dieron los canales de atención; el chat sigue abierto',
+  authorizationDeclined: 'No autorizó; se le ofreció un asesor',
 };
 
 function eventTone(text: string): 'ok' | 'info' | 'warn' {

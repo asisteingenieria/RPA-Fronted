@@ -6,10 +6,10 @@ La interfaz sigue el estilo de Asiste ING (Opción C de Recursos Humanos y Asist
 
 | Rol | Ve | Hace |
 |---|---|---|
-| **OPERADOR** | En vivo · Robots · Agente (solo lectura y Probar con la versión publicada) | Apagado de emergencia, cambiar su contraseña |
-| **ADMIN** | Todo lo anterior + Usuarios · Auditoría | Reanudar robot, habilitar reintento, gestionar robots, guardar/publicar/restaurar el agente, probar el borrador, gestionar usuarios |
+| **OPERADOR** | En vivo · Robots · Agente (solo lectura y Probar con la versión publicada) · Trazabilidad deshabilitada con motivo | Apagado de emergencia, cambiar su contraseña |
+| **ADMIN** | Todo lo anterior + Usuarios · Auditoría · Trazabilidad | Reanudar robot, habilitar reintento, gestionar robots, guardar/publicar/restaurar el agente, probar el borrador, gestionar usuarios |
 
-- `TopNav`: En vivo · Robots · Agente | Usuarios · Auditoría. El grupo tras el separador solo se renderiza para ADMIN.
+- `TopNav`: En vivo · Robots · Agente · **Trazabilidad** | Usuarios · Auditoría. El grupo tras el separador solo se renderiza para ADMIN. Trazabilidad se renderiza para todos; para el OPERADOR se ve deshabilitada con candado y motivo (`traceLocked`).
 - Dentro de Agente, subpestañas `Tabs sub`: Configuración · Probar agente · Historial · Evaluaciones.
 - Lo que un rol no puede hacer se ve **deshabilitado con motivo** ("Requiere rol ADMIN"), no se oculta. Excepción: las pestañas de administración, que no se renderizan para OPERADOR.
 
@@ -17,21 +17,36 @@ La interfaz sigue el estilo de Asiste ING (Opción C de Recursos Humanos y Asist
 
 La pantalla del agente sigue la estructura de Retell/Dapta para **editar el prompt completo**:
 
-1. `AgentBar` arriba: nombre, chip `CLARO MÓVIL`, `VersionStatus`, contexto ("Borrador v15 · basado en v14…"), indicador "Cambios sin guardar" y **Descartar · Guardar · Publicar con evaluación**.
+1. `AgentBar` arriba: nombre, chip `CLARO MÓVIL`, `VersionStatus`, contexto ("Borrador v15 · basado en v14…"), indicador "Cambios sin guardar" y **Descartar · Guardar borrador · Publicar** (la evaluación es evidencia, D-005).
 2. **Columna 1 (ancha):** fila de ajustes (Modelo de la lista permitida, Temperatura 0–0,3 con aviso si el modelo no la usa, Idioma fijo con candado) y el `PromptEditor`: el guion en Markdown con etapas `## MENU`, `## PERFIL`, `## OFERTA`, `## OBJECIONES`, `## AUTORIZACION`, hasta 30 000 caracteres.
 3. **Columna 2:** `Accordion` con Ajustes del agente, Mensaje de bienvenida (saludo editable + menú A–D fijo), **Catálogo en solo lectura** por proceso (Portabilidad, Migración, Línea nueva) con "Insertar" `{{OFERTA:CÓDIGO}}` en el cursor, Reglas del sistema (no editables) y Funciones del motor (en código).
 4. **Columna 3:** Probar agente en vivo (`WhatsAppPreview`) con el selector "Lo que hay en el editor / Versión publicada".
 
 ## Reglas no negociables
 
-- **Sin datos personales ni contenido de mensajes reales.** Solo estados, conteos, ids (`AB-77120`) y tiempos. La única excepción es el chat de simulación.
+- **Sin datos personales ni contenido de mensajes reales**, salvo en dos lugares: el chat de simulación y la pestaña **Trazabilidad** (autorizada por Claro por escrito, citada en `DECISIONS.md`). Trazabilidad es solo para ADMIN y cada apertura de un detalle o exportación queda en Auditoría (`CONVERSATION_VIEWED`, `CONVERSATIONS_EXPORTED`). En el resto del panel siguen solo estados, conteos, ids (`AB-77120`) y tiempos.
 - **Precios, planes y textos legales no van en el guion.** El `PromptEditor` subraya en rojo cualquier precio (`$ 99.900`), gigas (`55 GB`) o porcentaje (`20 %`), marca la línea y lista el error con enlace; no se puede guardar con errores. En la bienvenida además se bloquean promesas ("gratis", "te regalo"), enlaces y marcadores.
 - **El flujo no se configura visualmente.** No hay editor de nodos; las etapas se muestran (`StageTrack`) pero las decide la máquina de estados.
-- **Publicar siempre pasa por la evaluación** (60 conversaciones guionadas): 0 datos inventados y ≥ 95 % de casos correctos. Si falla, la versión queda Rechazada con `EvalReport`. No existe "publicar sin probar". Mientras evalúa, la pantalla se refresca cada 5 s.
+- **Publicar es inmediato (D-005)**: la evaluación (conversaciones guionadas; meta 0 datos inventados y ≥ 95 % de casos correctos) corre después de publicar o con «Evaluar» y queda como evidencia en el historial; no frena la publicación. Mientras evalúa, la pantalla se refresca cada 5 s.
 - **Apagado de emergencia siempre visible** en el TopNav y a un clic con confirmación en línea, para ambos roles. Reanudar solo ADMIN. Con el robot detenido, la píldora pasa a "ROBOT DETENIDO", el TopNav se marca en rojo y aparece la banda de detenido en todas las pantallas.
 - **Confirmación** en: apagado, deshabilitar robot, desactivar usuario, restablecer contraseña, actualizar todos.
 - **Secretos de un solo uso** (contraseña temporal, código de instalación) con `OneTimeSecret`: destacados, monoespaciados, con Copiar; nunca se vuelven a mostrar.
 - Salvaguardas de usuarios: nadie se desactiva ni se quita el rol a sí mismo; siempre queda al menos un ADMIN activo.
+
+## Trazabilidad
+
+Pestaña para seguir cada conversación del robot con el cliente, completa y sin enmascarar, con su tipificación y el rendimiento de cada robot. Ícono `MessagesSquare` (`messages`). Ruta `/trazabilidad` y detalle en `/trazabilidad/:id` (página completa, no drawer: el chat necesita alto).
+
+- **Subpestañas** `Tabs sub`: Conversaciones (con conteo del filtro) · Rendimiento por robot. Rango con `Segmented`: Hoy · 7 días · 30 días · Personalizado.
+- **Filtros** en `ai-toolbar`: búsqueda (id del chat de Abaya, nombre del cliente o texto de los mensajes, este último solo en rangos ≤ 30 días) y `ai-filter` para Robot, Tipificación, Proceso, Etapa final y «Pasó por revisión». Un filtro activo usa `ai-filter is-on` con su conteo.
+- **KPIs del filtro** en `ai-kpi-strip` 2 × 2 (conversaciones, ventas · conversión, 1.ª respuesta p50 / p95, duración media) junto a `TypificationBar`.
+- **Tabla** `ai-table--dense ai-table--compact`: Inicio → fin · Robot · Chat de Abaya (mono, con Copiar) · Cliente · `Typification short` · Etapa final (overline) · Proceso · plan (`ai-code-inline`) · Mensajes ↓ entrantes ↑ salientes · 1.ª resp. · duración · Alertas (`ai-flag`: incierto `warning`, revisión `danger`, regenerada `cat-tecnologia`, siempre con `aria-label`) · Ver. Paginación en el servidor en `ai-table-foot`, con el aviso de auditoría y la retención.
+- **Detalle**: migas con anterior/siguiente del filtro y «Descargar transcripción»; cabecera con nombre del cliente en `font-display`, id del chat, `Typification showCode`, hechos (`ai-trace-facts`) y `StageTrail` con el recorrido real. Debajo, `ai-trace-grid`: `WhatsAppPreview` de solo lectura (`input:false`) con `DeliveryState` y tiempo de respuesta bajo cada mensaje del robot y eventos como pastillas; a la derecha, paneles Cliente · Venta · Consentimiento · Catálogo usado (`dl.ai-kv ai-kv--wide`). Al final, Motor (llamadas por etapa) y Acciones del robot en Abaya (`RpaActionLog`, «Ver traza» si hubo error).
+- **Rendimiento por robot**: tabla robot × conversaciones, `TypificationBar thin`, ventas, % sin venta, % inactividad, revisiones, conversión, p95, inciertos y regeneradas. El peor valor del rango va en `ai-worst` (rojo + ▼) y el mejor en `ai-best` (verde + ▲); un `Callout warning` lo dice con palabras.
+- **Tipificaciones** (`Conversation.status`), siempre con texto: `TRANSFERRED_BACKOFFICE` Venta transferida al backoffice (`success`) · `CLOSED_NO_SALE` Cerrada sin venta (`neutral`) · `CLOSED_SUPPORT` Derivada a soporte (*611) (`cat-tyt`) · `CLOSED_INACTIVE` Cerrada por inactividad (120 min) (`outline`; barra `cat-tecnologia`) · `NEEDS_REVIEW` Requiere revisión humana (`danger`) · `ACTIVE` En curso (`info`, punto pulsante) · `WAITING_CONSENT` Esperando autorización (`warning`; barra `cat-operacion`) · `TRANSFERRING` Transfiriendo (`info`; barra `brand-azure`).
+- **Datos faltantes**: el teléfono del cliente no se guarda (`—` con tooltip); el origen de cada respuesta se muestra por etapa porque `LlmCall` no tiene `messageId`; lo que pasa después de la transferencia vive en Abaya. Nunca se inventan.
+- **Estados**: sin permiso (`Empty` con candado), skeletons `ai-skel` con la forma de la tabla, sin resultados con «Limpiar filtros», error con «Reintentar», aviso de rango para buscar texto.
+- **Ancho**: con seis pestañas, entre 1280 y 1420 px el reloj del TopNav se oculta para que quepan; la tabla se desplaza dentro de su tarjeta, nunca la página.
 
 ## Contenido y formatos
 
@@ -55,7 +70,7 @@ La pantalla del agente sigue la estructura de Retell/Dapta para **editar el prom
 
 ## Iconografía
 
-lucide-react con `strokeWidth={1.75}`. Equivalencias: En vivo `Activity`, Robots `Bot`, Agente `MessageSquareText`, Usuarios `Users`, Auditoría `ScrollText`, módulos `LayoutGrid`, apagado `Power`, reanudar `Play`, pausar `Pause`, credenciales `KeyRound`, equipo `Monitor`, sin señal `WifiOff`, catálogo `Package`, probar `FlaskConical`, historial `History`, guardar `Save`, reglas `Shield`. El componente `Icon` de este sistema es un subconjunto dibujado al estilo Lucide para las vistas previas.
+lucide-react con `strokeWidth={1.75}`. Equivalencias: En vivo `Activity`, Robots `Bot`, Agente `MessageSquareText`, Trazabilidad `MessagesSquare`, Usuarios `Users`, Auditoría `ScrollText`, módulos `LayoutGrid`, apagado `Power`, reanudar `Play`, pausar `Pause`, credenciales `KeyRound`, equipo `Monitor`, sin señal `WifiOff`, catálogo `Package`, probar `FlaskConical`, historial `History`, guardar `Save`, reglas `Shield`. El componente `Icon` de este sistema es un subconjunto dibujado al estilo Lucide para las vistas previas.
 
 ## Logos
 
@@ -63,4 +78,4 @@ Grupo **Logos**: `asiste-mark-white.png` (isotipo blanco, en el TopNav sobre `si
 
 ## Pantallas de referencia
 
-El grupo **Pantallas** tiene maquetas completas: Agente (configuración estilo Retell), Probar agente, Historial y evaluación, Operación en vivo, Robots, Usuarios y Acceso. Cambia el tema para verlas en oscuro. Todos los datos son ficticios.
+El grupo **Pantallas** tiene maquetas completas: Agente (configuración estilo Retell), Probar agente, Historial y evaluación, Operación en vivo, Robots, Usuarios y Acceso. El grupo **Trazabilidad** tiene la lista de conversaciones, el detalle de una conversación, el rendimiento por robot y los estados (sin permiso, cargando, vacío, error), más sus componentes: `Typification`, `TypificationBar`, `StageTrail` y `DeliveryState`. Cambia el tema para verlas en oscuro. Todos los datos son ficticios.

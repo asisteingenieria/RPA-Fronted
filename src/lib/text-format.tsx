@@ -3,8 +3,9 @@ import type { ReactNode } from 'react';
 /**
  * Formato de texto del panel. Construye nodos de React (nunca HTML crudo): sin riesgo de XSS.
  *  - renderWhatsApp: *negrita* (UN asterisco), _cursiva_, ~tachado~; saltos con white-space: pre-wrap.
- *  - Markdown: subconjunto para la vista previa del guion (títulos, listas, citas, **negrita**,
- *    `código` y marcadores {{OFERTA:CODIGO}}).
+ *  - Markdown: subconjunto para la vista previa del guion, con el aspecto de Dapta (títulos con su
+ *    etiqueta H1–H4, listas anidadas, citas, **negrita**, `código`, marcadores {{OFERTA:CODIGO}} y
+ *    saltos de línea respetados).
  */
 export function renderWhatsApp(text: string): ReactNode[] {
   const out: ReactNode[] = [];
@@ -78,7 +79,17 @@ export function Markdown({ source }: { source: string }) {
   const flush = () => {
     if (para.length) {
       const k = `p${blocks.length}`;
-      blocks.push(<p key={k}>{inline(para.join(' '), k)}</p>);
+      // Cada línea del guion se ve en su propia línea (como en Dapta).
+      blocks.push(
+        <p key={k}>
+          {para.map((l, i) => (
+            <span key={i}>
+              {i > 0 && <br />}
+              {inline(l, `${k}-${i}`)}
+            </span>
+          ))}
+        </p>,
+      );
       para = [];
     }
     if (list.length) {
@@ -97,8 +108,35 @@ export function Markdown({ source }: { source: string }) {
       flush();
       const level = heading[1]!.length;
       const k = `h${blocks.length}`;
-      const content = inline(heading[2]!, k);
-      blocks.push(level === 1 ? <h3 key={k}>{content}</h3> : level === 2 ? <h4 key={k}>{content}</h4> : <h5 key={k}>{content}</h5>);
+      // Etiqueta pequeña con el nivel (H1–H4) junto al título, como en Dapta.
+      const content = (
+        <>
+          {inline(heading[2]!, k)}
+          <span className="md-tag" aria-hidden>
+            H{level}
+          </span>
+        </>
+      );
+      const cls = `md-h${level}`;
+      blocks.push(
+        level === 1 ? (
+          <h3 key={k} className={cls}>
+            {content}
+          </h3>
+        ) : level === 2 ? (
+          <h4 key={k} className={cls}>
+            {content}
+          </h4>
+        ) : level === 3 ? (
+          <h5 key={k} className={cls}>
+            {content}
+          </h5>
+        ) : (
+          <h6 key={k} className={cls}>
+            {content}
+          </h6>
+        ),
+      );
     } else if (item) {
       if (para.length) flush();
       list.push({ depth: item[1]!.replace(/\t/g, '  ').length, ordered: /\d/.test(item[2]!), text: item[3]! });

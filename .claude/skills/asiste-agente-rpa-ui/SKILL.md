@@ -42,21 +42,21 @@ Si el proyecto no tiene `lucide-react` o `@fontsource/*`, pide permiso antes de 
 
 ## Reglas no negociables
 
-1. **Sin datos personales ni contenido de mensajes reales.** Solo estados, conteos, ids y tiempos. Única excepción: el chat de simulación.
+1. **Sin datos personales ni contenido de mensajes reales.** Solo estados, conteos, ids y tiempos. Excepciones: el chat de simulación y la pestaña **Trazabilidad** (autorizada por Claro por escrito; es solo para ADMIN y el servidor audita cada apertura y exportación). Ver `reference/trazabilidad/SPEC-TRAZABILIDAD.md`.
 2. **Precios, planes y textos legales no se editan en el guion.** El catálogo es solo lectura; en el guion se insertan marcadores `{{OFERTA:CÓDIGO}}` en el cursor.
 3. **El flujo no es configurable visualmente.** Nada de editores de nodos; `StageTrack` solo muestra.
-4. **Publicar siempre pasa por la evaluación.** No existe "publicar sin probar". Mientras evalúa, refresca cada 5 s; si falla, `EvalReport` rojo.
+4. **Publicar es inmediato (D-005).** La evaluación no frena la publicación: corre después (o con «Evaluar») y su `EvalReport` queda como evidencia en el historial de la versión. Mientras evalúa, refresca cada 5 s.
 5. **Apagado de emergencia siempre visible** en el TopNav, a un clic con confirmación en línea, para ambos roles; **reanudar solo ADMIN**.
 6. **Confirmación** en: apagado, deshabilitar robot, desactivar usuario, restablecer contraseña, actualizar todos.
 7. **Secretos de un solo uso** (contraseña temporal, código de instalación) con `OneTimeSecret`; nunca se vuelven a mostrar.
-8. **Permisos reflejados:** lo que el rol no permite se ve **deshabilitado con motivo** (`reason`), no se oculta. Excepción: las pestañas Usuarios y Auditoría no se renderizan para OPERADOR. Salvaguardas de usuarios con `userGuard()`.
+8. **Permisos reflejados:** lo que el rol no permite se ve **deshabilitado con motivo** (`reason`), no se oculta. Excepción: las pestañas Usuarios y Auditoría no se renderizan para OPERADOR. La pestaña Trazabilidad sí se renderiza para todos: para el OPERADOR se ve deshabilitada con candado y motivo. Salvaguardas de usuarios con `userGuard()`.
 9. **Sin scroll horizontal de la página**, claro/oscuro, AA, foco visible (`--focus-ring`), navegación por teclado.
 10. **No inventes datos.** Si una pantalla necesita un dato que el backend no entrega, muestra un placeholder (`—`) y anótalo en una lista de **"datos faltantes"** para revisarla con el usuario.
 
 ## Estructura de navegación
 
 `AppLayout` = `TopNav` navy (60 px) + banda roja si el robot está detenido + `<main class="ai-content">`.
-TopNav: marca Asiste · selector de módulo · **En vivo · Robots · Agente | Usuarios · Auditoría** (grupo tras el
+TopNav: marca Asiste · selector de módulo · **En vivo · Robots · Agente · Trazabilidad | Usuarios · Auditoría** (grupo tras el
 separador solo ADMIN) · píldora "Robot operando"/"ROBOT DETENIDO" · Apagado de emergencia · reloj · alertas ·
 avatar (nombre, rol, Tema, Cambiar contraseña, Cerrar sesión). Se elimina el "Salir (usuario · ROL)" suelto
 y las pestañas actuales "Operación · Robots · Agente · Usuarios · Cambiar contraseña".
@@ -71,13 +71,15 @@ Por debajo de 1280 px las pestañas quedan solo con ícono y tooltip; por debajo
 | Agente → Probar agente | `probaragente` | `/admin/agent/test` |
 | Agente → Historial (+ evaluación) | `historial` | `/admin/agent/versions`, `/admin/agent/restore` |
 | Usuarios | `usuarios` | `/admin/users*` |
+| Trazabilidad (lista, rendimiento por robot, estados) | `reference/trazabilidad/screens/trazabilidad-{lista,robots,estados}` | `/admin/conversations`, `/admin/conversations/stats`, `/admin/conversations/export` |
+| Trazabilidad → detalle (`/trazabilidad/:id`) | `reference/trazabilidad/screens/trazabilidad-detalle` | `/admin/conversations/:id` |
 | Auditoría (sin captura: tabla `ai-table` con filtros, patrón de Errores recientes) | — | `/admin/audit` |
 | Cambiar contraseña (desde el menú del avatar, mismo patrón que el login) | `login` | `/admin/auth/*` |
 
 ## Pantalla Agente → Configuración (la más importante)
 
 Estructura de Retell para **editar el prompt completo**:
-1. `AgentBar`: nombre, `CampaignChip`, `VersionStatus`, contexto ("Borrador v15 · basado en v14…"), "Cambios sin guardar", **Descartar · Guardar · Publicar con evaluación**.
+1. `AgentBar`: nombre, `CampaignChip`, `VersionStatus`, contexto ("Borrador v15 · basado en v14…"), "Cambios sin guardar", **Descartar · Guardar borrador · Publicar** (la evaluación es evidencia, D-005).
 2. `Tabs sub`: Configuración · Probar agente · Historial · Evaluaciones.
 3. Grid `.ai-agent-grid` de 3 columnas (`1fr 340px 360px`):
    - **Col. 1:** `PromptEditor` con `ModelSettings` como `toolbar` (modelo de la lista permitida o "por defecto del servidor"; temperatura 0–0,3 con aviso si el modelo no la usa; idioma fijo). El guion en Markdown por etapas `## MENU`, `## PERFIL`, `## OFERTA`, `## OBJECIONES`, `## AUTORIZACION`; máx. 30 000 caracteres; contador de tokens; **revisión en vivo** con enlace a la línea; no se guarda con errores.
@@ -85,6 +87,14 @@ Estructura de Retell para **editar el prompt completo**:
    - **Col. 3:** Panel "Probar agente" con `Segmented` "Lo que hay en el editor" (solo ADMIN) / "Versión publicada" y `WhatsAppPreview`.
 4. Avisos cuando no se puede publicar (proveedor simulado o sin API key) → `Callout tone="warning"` y `cannotPublish` en `AgentBar`.
 5. OPERADOR: todo en solo lectura (`readOnly`), botones deshabilitados con motivo; prueba solo la publicada.
+
+## Pestaña Trazabilidad
+
+Spec completa en `reference/trazabilidad/SPEC-TRAZABILIDAD.md`; plantillas en `templates/components/trazabilidad/`,
+`templates/pages/trazabilidad*.tsx`, `templates/lib/{tipificaciones,trazabilidad-api,roles.trazabilidad}.ts`,
+`templates/styles/trazabilidad.css` e integración en `templates/integracion/`. Las tipificaciones siempre con su
+nombre en español (`Typification`), nunca solo color; el chat real es de solo lectura (`TraceChat`, no
+`WhatsAppPreview`); los datos faltantes (teléfono, origen por mensaje, post-transferencia) se muestran con «—».
 
 ## Tokens: solo `var(--token)`
 
@@ -133,3 +143,5 @@ permisos reflejados · confirmaciones · estados de carga/vacío/error · format
 | `reference/maquetas/` | HTML de las maquetas + `bundle.js`/`bundle.css` (solo consulta) |
 | `reference/logos/` | Logos de Asiste ING |
 | `templates/` | Código listo para copiar: estilos, utilidades y componentes |
+| `reference/trazabilidad/` | Spec, capturas (4 × 2 temas) y maquetas de la pestaña Trazabilidad |
+| `INSTRUCCIONES-TRAZABILIDAD.md` | Prompts de arranque (backend y front), fases y criterios de aceptación de Trazabilidad |

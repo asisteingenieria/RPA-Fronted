@@ -56,6 +56,14 @@ export function publishKnowledgeReason(me: { role: Role; knowledgePublisher?: bo
   return undefined;
 }
 
+/**
+ * Trazabilidad (D-002): la ve todo ADMIN (el ADMIN ve todo). El OPERADOR ve la pestaña
+ * deshabilitada con el motivo; el servidor responde 403.
+ */
+export function viewConversationsReason(me: { role: Role }): string | undefined {
+  return me.role === 'ADMIN' ? undefined : 'Requiere rol ADMIN: las conversaciones muestran mensajes reales y datos de clientes.';
+}
+
 /** Salvaguardas de Usuarios: nadie se desactiva ni se quita el rol, y siempre queda un ADMIN activo. */
 export function userGuard(opts: { isSelf: boolean; isLastActiveAdmin: boolean }): {
   canDeactivate: boolean;

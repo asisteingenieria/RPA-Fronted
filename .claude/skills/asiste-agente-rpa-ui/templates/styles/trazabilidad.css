@@ -1,0 +1,81 @@
+/*
+ * Trazabilidad — estilos de la pestaña. Importar DESPUÉS de components.css.
+ * Solo var(--token): cero hexadecimales. Requiere tokens.css del kit.
+ */
+/* ============ Trazabilidad ============ */
+.ai-topnav-link.is-locked { opacity: .55; cursor: not-allowed; }
+.ai-badge--tyt { background: var(--cat-tyt-soft); color: var(--cat-tyt); }
+.ai-tip-code { opacity: .7; font-weight: 500; margin-left: 4px; }
+.ai-tipbar-wrap { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ai-tipbar { display: flex; gap: 2px; height: 14px; border-radius: var(--radius-pill); overflow: hidden; background: var(--surface-200); }
+.ai-tipbar.is-thin { height: 8px; min-width: 120px; }
+.ai-tipbar > span { display: block; min-width: 4px; }
+.ai-tipbar-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.ai-tipbar-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.ai-tipbar-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.ai-tipbar-legend b { color: var(--ink); font-weight: 600; }
+.ai-tipbar-legend small { color: var(--ink-subtle); font-size: 12px; }
+.ai-tipbar-legend .is-zero { opacity: .55; }
+.ai-trail { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; }
+.ai-trail li { display: inline-flex; align-items: center; gap: 4px; }
+.ai-trail li > span { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: var(--radius-sm); background: var(--surface-200); color: var(--ink-muted); font: 600 11px/14px var(--font-sans); letter-spacing: .05em; }
+.ai-trail li.is-back > span { background: var(--warning-soft); color: var(--warning); }
+.ai-trail li.is-now > span { background: var(--primary-soft); color: var(--primary-soft-ink); box-shadow: inset 0 0 0 1px var(--primary); }
+.ai-trail li.is-exit > span { letter-spacing: 0; font-size: 12px; }
+.ai-trail li.is-exit.is-success > span { background: var(--success-soft); color: var(--success); }
+.ai-trail li.is-exit.is-danger > span { background: var(--danger-soft); color: var(--danger); }
+.ai-trail li.is-exit.is-warning > span { background: var(--warning-soft); color: var(--warning); }
+.ai-trail li.is-exit.is-info > span, .ai-trail li.is-exit.is-tyt > span { background: var(--primary-soft); color: var(--primary-soft-ink); }
+.ai-trail .ai-trail-sep { color: var(--ink-subtle); }
+.ai-trail li.is-back .ai-trail-sep { color: var(--warning); }
+.ai-delivery { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 99px; font: 600 11px/14px var(--font-sans); }
+.ai-delivery.ok { background: var(--success-soft); color: var(--success); }
+.ai-delivery.warn { background: var(--warning-soft); color: var(--warning); }
+.ai-delivery.err { background: var(--danger-soft); color: var(--danger); }
+.ai-delivery-rt { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; padding-left: 6px; border-left: 1px solid currentColor; }
+.ai-wa-origin.is-client { align-self: flex-end; }
+.ai-chatid { display: inline-flex; align-items: center; gap: 6px; font: 500 13px/16px var(--font-mono); color: var(--ink); }
+.ai-chatid .ai-icon-btn { width: 26px; height: 26px; }
+.ai-flags { display: inline-flex; gap: 6px; }
+.ai-flag { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); }
+.ai-flag.warn { background: var(--warning-soft); color: var(--warning); }
+.ai-flag.err { background: var(--danger-soft); color: var(--danger); }
+.ai-flag.info { background: var(--cat-tecnologia-soft); color: var(--cat-tecnologia); }
+.ai-pager { display: inline-flex; align-items: center; gap: 8px; }
+.ai-trace-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: start; padding: 20px 24px; }
+.ai-trace-facts { display: flex; flex-wrap: wrap; gap: 24px 36px; margin: 0; }
+.ai-trace-facts dt { font: 500 12px/16px var(--font-sans); color: var(--ink-subtle); }
+.ai-trace-facts dd { margin: 4px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ai-trace-grid { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 20px; align-items: start; }
+.ai-kv--wide { grid-template-columns: 150px 1fr; }
+.ai-kv dd.ai-mono, .ai-mono { font-family: var(--font-mono); font-size: 12px; font-weight: 500; overflow-wrap: anywhere; }
+.ai-quote { margin: 0; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--surface-200); font-size: 13px; color: var(--ink); }
+.ai-retention { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); }
+.ai-skel { display: block; border-radius: 6px; background: linear-gradient(90deg, var(--surface-200) 0%, var(--surface-0) 50%, var(--surface-200) 100%); background-size: 200% 100%; animation: ai-skel 1.4s ease-in-out infinite; }
+@keyframes ai-skel { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .ai-skel { animation: none; } }
+.ai-worst { color: var(--danger); font-weight: 600; }
+.ai-worst::after { content: " ▼"; font-size: 10px; }
+.ai-best { color: var(--success); font-weight: 600; }
+.ai-best::after { content: " ▲"; font-size: 10px; }
+/* Con la pestaña Trazabilidad el TopNav necesita algo menos de aire para caber a 1440 px */
+.ai-topnav-link { padding: 0 9px; gap: 7px; }
+.ai-topnav { gap: 12px; }
+.ai-topnav-right { gap: 8px; }
+.ai-topnav-link.is-active::after { left: 6px; right: 6px; }
+/* Entre 1280 y 1420 px el reloj se oculta para que quepan las 6 pestañas (la hora sigue en el tooltip de la píldora) */
+@media (max-width: 1420px) { .ai-topnav .ai-clock-chip { display: none; } }
+
+/* Layout de las vistas (equivalente a los estilos en línea de las maquetas) */
+.ai-trace-kpis { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: var(--space-5); align-items: stretch; }
+.ai-kpi-strip--2x2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr 1fr; }
+.ai-kpi-strip--2x2 > div + div { border-left: 0; }
+.ai-sub { display: block; font-size: 12px; line-height: 16px; color: var(--ink-subtle); }
+.ai-arrow { color: var(--ink-subtle); margin: 0 4px; }
+.ai-trace-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.ai-trace-title { font: 600 22px/28px var(--font-display); color: var(--ink); margin: 0; }
+.ai-trace-bottom { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.ai-search input::placeholder { color: var(--ink-subtle); }
+button.ai-link { background: none; border: 0; padding: 0; cursor: pointer; }
+button.ai-filter { cursor: pointer; }
+@media (max-width: 1180px) { .ai-trace-kpis, .ai-trace-grid, .ai-trace-bottom { grid-template-columns: minmax(0, 1fr); } }

@@ -1,0 +1,34 @@
+<!-- @dsCard group="Trazabilidad" height=980 width=1440 page subtitle="Estados obligatorios: sin permiso, cargando, sin resultados y error" -->
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>preview</title>
+<style>#root{padding:0} .g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start} .lbl{margin:0 0 8px}</style></head>
+<body class="ai-scope">
+<div id="root" class="ai-scope"></div>
+<script>
+var A = window.AsisteRPA, h = React.createElement, F = React.Fragment;
+function sk(w,hh){ return h('span',{className:'ai-skel',style:{width:w,height:hh||12}}); }
+function empty(icon,tone,title,text,action){ return h('div',{className:'ai-empty'},h('span',{className:'ai-modal-icon'+(tone?' ai-modal-icon--'+tone:'')},h(A.Icon,{name:icon,size:22})),h('b',{style:{color:'var(--ink)',fontSize:15}},title),h('span',{style:{maxWidth:420}},text),action); }
+function card(label, body){ return h('div',null,h('div',{className:'ai-overline lbl'},label),body); }
+ReactDOM.createRoot(document.getElementById('root')).render(h(A.Shell,{active:'envivo',attention:2,role:'OPERADOR',initials:'LC',user:'Laura Castro',traceLocked:'Necesitas el permiso «Ver conversaciones». Lo asigna un ADMIN en Usuarios.'},
+ h(A.PageHead,{title:'Trazabilidad · estados',sub:'Cómo se ve la pestaña cuando no hay permiso, mientras carga, sin resultados o con error'}),
+ h('div',{className:'g2'},
+  card('Sin permiso (OPERADOR o ADMIN sin la marca) · la pestaña del TopNav se ve deshabilitada con candado',
+   h('div',{className:'ai-card'},empty('lock',null,'No tienes acceso a las conversaciones','Las conversaciones muestran mensajes reales y datos del cliente. Necesitas el permiso «Ver conversaciones», que asigna un ADMIN en Usuarios.',h('span',{className:'ai-help'},'Pídeselo a un administrador del panel.')))),
+  card('Cargando · skeletons con la forma de la tabla',
+   h('div',{className:'ai-card'},
+    h('div',{className:'ai-toolbar'},sk('100%',38)),
+    h('table',{className:'ai-table ai-table--dense'},h('thead',null,h('tr',null,['Inicio → fin','Robot','Chat','Cliente','Tipificación'].map(function(x){return h('th',{key:x},x);}))),
+     h('tbody',null,[1,2,3,4,5].map(function(i){return h('tr',{key:i},h('td',null,sk(70),h('div',{style:{height:6}}),sk(90,10)),h('td',null,sk(60)),h('td',null,sk(70)),h('td',null,sk(120)),h('td',null,sk(110,22)));}))))),
+  card('Sin resultados para el filtro',
+   h('div',{className:'ai-card'},empty('search',null,'Ninguna conversación coincide','No hay conversaciones con tipificación «Requiere revisión humana» del robot-04 hoy. Prueba con 7 días o quita algún filtro.',h('div',{className:'ai-row',style:{justifyContent:'center'}},h(A.Button,{icon:'x'},'Limpiar filtros'),h(A.Button,{variant:'ghost'},'Ver últimos 7 días'))))),
+  card('Error al cargar',
+   h('div',{className:'ai-card'},empty('alert','danger','No pudimos cargar las conversaciones','El servidor no respondió (GET /admin/conversations). Tus filtros se conservan.',h(A.Button,{variant:'primary',icon:'refresh'},'Reintentar')))),
+  card('Búsqueda dentro del texto · límite de rango',
+   h(A.Callout,{tone:'info'},h('b',null,'La búsqueda en el texto de los mensajes funciona en rangos de hasta 30 días.'),' Los mensajes están cifrados: el servidor los descifra para buscar. Reduce el rango para buscar texto.')),
+  card('Detalle abierto · aviso de auditoría',
+   h(A.Callout,{tone:'info',icon:'shield'},'Abriste la conversación AB-77088. Queda registrado en Auditoría (CONVERSATION_VIEWED) con tu usuario y la hora.')))
+));
+</script>
+</body>
+</html>

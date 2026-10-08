@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { fmtMs, formatAgo, formatCOP, formatDuration, formatPct, formatTime, initials } from './format';
 import { HIGHLIGHT_RE, lintGuion } from './guion-lint';
-import { can, reasonFor, userGuard } from './roles';
+import { can, reasonFor, userGuard, viewConversationsReason } from './roles';
+import { conversationQuery } from './api';
+import { diffLines } from './diff';
+import { parseTraceSearch, searchBlocked, toFilters } from './trace-search';
 
 describe('formatos colombianos', () => {
   it('dinero, porcentaje y duraciones', () => {
@@ -59,5 +62,50 @@ describe('permisos que refleja la UI', () => {
     expect(userGuard({ isSelf: true, isLastActiveAdmin: false }).canDeactivate).toBe(false);
     expect(userGuard({ isSelf: false, isLastActiveAdmin: true }).canChangeRole).toBe(false);
     expect(userGuard({ isSelf: false, isLastActiveAdmin: false })).toEqual({ canDeactivate: true, canChangeRole: true });
+  });
+});
+
+describe('trazabilidad', () => {
+  it('la ve todo ADMIN; el OPERADOR no', () => {
+    expect(viewConversationsReason({ role: 'ADMIN' })).toBeUndefined();
+    expect(viewConversationsReason({ role: 'OPERADOR' })).toMatch(/Requiere rol ADMIN/);
+  });
+
+  it('valida la URL: descarta valores desconocidos y conserva los filtros', () => {
+    expect(
+      parseTraceSearch({ rango: '7d', tip: 'CLOSED_NO_SALE,XX', proceso: 'MIGRACION', revision: 'si', pag: '25', q: ' tigo ' }),
+    ).toEqual({ rango: '7d', tip: 'CLOSED_NO_SALE', proceso: 'MIGRACION', revision: 'si', pag: 25, q: 'tigo' });
+    expect(parseTraceSearch({ rango: 'hoy', desde: '2026-01-01' })).toEqual({});
+    expect(parseTraceSearch({ rango: 'custom', desde: '2026-10-01', hasta: 'x' })).toEqual({ rango: 'custom', desde: '2026-10-01' });
+  });
+
+  it('arma la consulta de /admin/conversations', () => {
+    const q = conversationQuery(toFilters({ rango: '30d', robot: 'robot-01,robot-02', tip: 'NEEDS_REVIEW', revision: 'no', pag: 50 }));
+    expect(Object.fromEntries(new URLSearchParams(q))).toEqual({
+      range: '30d',
+      robot: 'robot-01,robot-02',
+      status: 'NEEDS_REVIEW',
+      reviewed: 'false',
+      cursor: '50',
+      limit: '25',
+    });
+  });
+
+  it('la búsqueda en el texto se bloquea en rangos de más de 30 días', () => {
+    expect(searchBlocked({ rango: '30d', q: 'hola' })).toBe(false);
+    expect(searchBlocked({ rango: 'custom', desde: '2026-01-01', hasta: '2026-03-01', q: 'hola' })).toBe(true);
+    expect(searchBlocked({ rango: 'custom', desde: '2026-01-01', hasta: '2026-03-01' })).toBe(false);
+  });
+});
+
+describe('diferencias del guion (D-004)', () => {
+  it('marca solo lo agregado y lo quitado', () => {
+    const rows = diffLines('# Rol\n- Eres Sofía\n- Tono cálido\n## MENU', '# Rol\n- Eres Sofía, de Claro\n- Tono cálido\n## MENU\n- Nueva regla');
+    expect(rows.filter((r) => r.type !== 'same')).toEqual([
+      { type: 'del', text: '- Eres Sofía' },
+      { type: 'add', text: '- Eres Sofía, de Claro' },
+      { type: 'add', text: '- Nueva regla' },
+    ]);
+    expect(diffLines('a\nb', 'a\nb').every((r) => r.type === 'same')).toBe(true);
   });
 });

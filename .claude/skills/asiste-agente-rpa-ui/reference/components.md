@@ -19,13 +19,21 @@ Todos usan las clases `ai-*` de `templates/styles/components.css` (las mismas de
 | `TopNav`, `AppLayout`, `EmergencyStop` | layout.tsx | Estructura de todas las pantallas; confirmación en línea del apagado |
 | `PromptEditor` | agente/PromptEditor.tsx | Guion completo: textarea real + capa de resaltado, números de línea, marcadores, errores con enlace a la línea, contador. `ref.insert()` y `ref.goToLine()` |
 | `ModelSettings` | agente/AgentParts.tsx | Modelo, temperatura (0–0,3) e idioma fijo, como `toolbar` del editor |
-| `AgentBar` | agente/AgentParts.tsx | Encabezado del agente con Descartar · Guardar · Publicar con evaluación |
+| `AgentBar` | agente/AgentParts.tsx | Encabezado del agente con Descartar · Guardar borrador · Publicar (evaluación como evidencia, D-005) |
 | `Section`, `SectionStack` | agente/AgentParts.tsx | Columna central plegable |
 | `CatalogReadOnly` | agente/AgentParts.tsx | Catálogo por proceso con "Insertar" (ADMIN) o "Copiar marcador" (OPERADOR) |
 | `StageTrack` | agente/AgentParts.tsx | Etapas del motor en "Estado de la simulación" |
 | `EvalReport`, `EvalProgress` | agente/AgentParts.tsx | Evaluación rechazada (tarjeta roja + casos fallidos) y progreso de la suite |
 | `OneTimeSecret` | agente/AgentParts.tsx | Contraseña temporal y código de instalación |
 | `WhatsAppPreview` | agente/WhatsAppPreview.tsx | Chat de simulación: orígenes por respuesta, eventos centrados, campo bloqueado al terminar |
+| `Typification` | trazabilidad/TraceParts.tsx | Tipificación de una conversación; `short` en tablas, `showCode` en el detalle |
+| `TypificationBar` | trazabilidad/TraceParts.tsx | Barra apilada + leyenda (conteo y %); `thin` y `legend={false}` en celdas |
+| `StageTrail` | trazabilidad/TraceParts.tsx | Recorrido REAL de etapas (con retrocesos) y salida. No reemplaza a `StageTrack` |
+| `DeliveryState` | trazabilidad/TraceParts.tsx | Verificado / Incierto / Fallido + intentos + tiempo de respuesta |
+| `ChatId`, `AlertFlags`, `FilterChip`, `Skel` | trazabilidad/TraceParts.tsx | Id del chat con Copiar · íconos de alerta con `aria-label` · chip de filtro · skeleton |
+| `TraceChat` | trazabilidad/TraceChat.tsx | Chat real de SOLO LECTURA con estado de envío y eventos intercalados por hora |
+| `TraceHeader`, `TraceKpis`, `ConversationList`, `RobotPerformance`, `TraceNoAccess` | pages/trazabilidad.tsx | Vistas de la lista y del rendimiento (presentación; conéctalas a la API) |
+| `ConversationDetailView` | pages/trazabilidad-detalle.tsx | Detalle completo de una conversación |
 
 ## Utilidades (`src/lib/`)
 

@@ -109,15 +109,12 @@ export function SaveDialog({
   open,
   onOpenChange,
   saving,
-  evaluateReason,
   onSave,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  saving: 'plain' | 'evaluate' | null;
-  /** Por qué no se puede evaluar (proveedor simulado, sin API key…). */
-  evaluateReason?: string;
-  onSave: (opts: { evaluate: boolean; note: string }) => void;
+  saving: boolean;
+  onSave: (opts: { note: string }) => void;
 }) {
   const [note, setNote] = useState('');
   useEffect(() => {
@@ -129,8 +126,8 @@ export function SaveDialog({
         <DialogHeader className="px-6 pt-6 pb-4 text-left">
           <DialogTitle className="font-display text-lg font-semibold">Guardar borrador</DialogTitle>
           <DialogDescription className="text-[13px] text-ink-muted">
-            Se guarda sin publicar: el robot sigue con la versión publicada. Cada versión queda en el historial; la evaluación corre la suite contra el modelo real (unos
-            minutos) y deja la evidencia.
+            Se guarda sin publicar: el robot sigue con la versión publicada. Cada versión queda en el historial. Guardar no evalúa (D-008): la evaluación se
+            lanza cuando quieras desde Configuración → Evaluación.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-1.5 px-6 pb-6">
@@ -148,14 +145,11 @@ export function SaveDialog({
           <span className="text-xs text-ink-subtle">Ayuda a entender el historial: qué cambió y por qué.</span>
         </div>
         <DialogFooter className="border-t bg-surface-0 px-6 py-4">
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={!!saving}>
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          <ActionButton variant="secondary" icon={Save} loading={saving === 'plain'} disabled={!!saving} onClick={() => onSave({ evaluate: false, note })}>
+          <ActionButton icon={Save} loading={saving} onClick={() => onSave({ note })}>
             Guardar borrador
-          </ActionButton>
-          <ActionButton icon={FlaskConical} loading={saving === 'evaluate'} disabled={!!saving} reason={evaluateReason} onClick={() => onSave({ evaluate: true, note })}>
-            Guardar y evaluar
           </ActionButton>
         </DialogFooter>
       </DialogContent>
@@ -163,13 +157,12 @@ export function SaveDialog({
   );
 }
 
-/* ───── Publicar (nota, evaluación de evidencia y urgencia) ───── */
+/* ───── Publicar (nota y urgencia; D-008: no evalúa) ───── */
 export function PublishDialog({
   open,
   onOpenChange,
   version,
   fromEditor,
-  evaluateReason,
   publishing,
   onPublish,
 }: {
@@ -179,26 +172,21 @@ export function PublishDialog({
   version: AgentVersion | null;
   /** Hay cambios en el editor: se guardan como versión nueva y se publican. */
   fromEditor: boolean;
-  /** Por qué no se puede evaluar (sin LLM real o sin API key). */
-  evaluateReason?: string;
   publishing: boolean;
-  onPublish: (opts: { note: string; applyToOpen: boolean; evaluate: boolean }) => void;
+  onPublish: (opts: { note: string; applyToOpen: boolean }) => void;
 }) {
   const [note, setNote] = useState('');
   const [urgent, setUrgent] = useState(false);
-  const [evaluate, setEvaluate] = useState(true);
   useEffect(() => {
     if (open) {
       setNote('');
       setUrgent(false);
-      setEvaluate(true);
     }
   }, [open]);
   const target = fromEditor ? null : version;
   if (!fromEditor && !version) return null;
   const verdict = target?.evalVerdict ?? null;
   const hasResult = verdict === 'OK' || verdict === 'WARN' || verdict === 'BLOCKED';
-  const evalBlocked = verdict === 'RUNNING' ? 'Ya se está evaluando' : hasResult ? 'Ya tiene su evaluación en el historial' : evaluateReason;
   const s = target?.evalSummary;
   const pct = s && hasResult ? evalPct(s) : null;
   return (
@@ -208,7 +196,7 @@ export function PublishDialog({
           <DialogTitle className="font-display text-lg font-semibold">{target ? `Publicar la v${target.version}` : 'Publicar los cambios'}</DialogTitle>
           <DialogDescription className="text-[13px] text-ink-muted">
             {fromEditor ? 'Se guarda como versión nueva y se publica al instante. ' : 'Se publica al instante. '}
-            La evaluación no frena la publicación: es evidencia para el historial.
+            Publicar no evalúa: si quieres evidencia, evalúa la versión publicada desde Configuración → Evaluación.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 px-6 pb-6">
@@ -236,15 +224,6 @@ export function PublishDialog({
             />
             <span className="text-xs text-ink-subtle">Queda en el historial y en Auditoría.</span>
           </div>
-          <label className={cn('flex items-start gap-3 rounded-md border px-3.5 py-3', evalBlocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer')}>
-            <Checkbox checked={!evalBlocked && evaluate} disabled={!!evalBlocked} onCheckedChange={(c) => setEvaluate(c === true)} className="mt-0.5" />
-            <span className="flex flex-col gap-0.5 text-[13px]">
-              <b className="font-semibold text-ink">Evaluar después de publicar</b>
-              <span className="text-ink-muted">
-                {evalBlocked ?? 'Corre la suite en segundo plano (unos minutos) y deja el reporte en el historial de esta versión. No cambia lo publicado.'}
-              </span>
-            </span>
-          </label>
           <label className="flex cursor-pointer items-start gap-3 rounded-md border px-3.5 py-3">
             <Checkbox checked={urgent} onCheckedChange={(c) => setUrgent(c === true)} className="mt-0.5" />
             <span className="flex flex-col gap-0.5 text-[13px]">
@@ -260,7 +239,7 @@ export function PublishDialog({
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={publishing}>
             Cancelar
           </Button>
-          <ActionButton icon={Rocket} loading={publishing} onClick={() => onPublish({ note: note.trim(), applyToOpen: urgent, evaluate: !evalBlocked && evaluate })}>
+          <ActionButton icon={Rocket} loading={publishing} onClick={() => onPublish({ note: note.trim(), applyToOpen: urgent })}>
             {urgent ? 'Publicar y aplicar ya' : 'Publicar'}
           </ActionButton>
         </DialogFooter>

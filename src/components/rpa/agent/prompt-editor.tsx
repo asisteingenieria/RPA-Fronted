@@ -36,7 +36,7 @@ interface Props {
   toolbar?: ReactNode;
   issues: EditorIssue[];
   maxChars?: number;
-  /** Alto mínimo del área de texto; el editor crece hasta el alto de su fila. */
+  /** Alto mínimo del área de texto; el editor crece con el guion para mostrarlo completo. */
   minHeight?: number;
 }
 
@@ -161,7 +161,12 @@ export const PromptEditor = forwardRef<PromptEditorHandle, Props>(function Promp
 
   const goTo = (line: number) => {
     if (p.mode !== 'md') p.onModeChange('md');
-    requestAnimationFrame(() => ta.current && focusLine(ta.current, line));
+    requestAnimationFrame(() => {
+      if (!ta.current) return;
+      focusLine(ta.current, line);
+      // El editor crece con el guion (sin desplazamiento interno): se desplaza la página.
+      hl.current?.children[line - 1]?.scrollIntoView({ block: 'center' });
+    });
   };
 
   const apply = (tool: Tool) => {
@@ -248,19 +253,16 @@ export const PromptEditor = forwardRef<PromptEditorHandle, Props>(function Promp
       </div>
 
       {p.mode === 'preview' ? (
-        // Capa absoluta: la vista previa se desplaza por dentro y no estira la fila.
-        <div className="relative flex-1 bg-surface-100" style={{ minHeight }}>
-          <div className="absolute inset-0 overflow-auto px-6 py-5" tabIndex={0} aria-label="Vista previa del guion">
-            <Markdown source={p.value} />
-          </div>
+        // Crece con el guion: se ve completo y la página se desplaza.
+        <div className="flex-1 bg-surface-100 px-6 py-5" style={{ minHeight }} tabIndex={0} aria-label="Vista previa del guion">
+          <Markdown source={p.value} />
         </div>
       ) : (
-        <div className="relative flex-1 overflow-hidden bg-code-bg" style={{ minHeight }}>
-          <div
-            ref={hl}
-            aria-hidden
-            className={cn('ai-code pointer-events-none absolute inset-0 overflow-hidden px-4 py-3 text-ink [scrollbar-gutter:stable]', font)}
-          >
+        // El resaltado va en el flujo normal y fija el alto: el editor crece con el guion, así se
+        // ve completo hasta la última línea (antes la capa de resaltado no alcanzaba a desplazarse
+        // hasta el final del textarea y las últimas líneas quedaban cortadas).
+        <div className="relative flex-1 bg-code-bg" style={{ minHeight }}>
+          <div ref={hl} aria-hidden className={cn('ai-code pointer-events-none px-4 pt-3 pb-[33px] text-ink', font)}>
             {lines.map((l, i) => (
               <div key={i} className={cn('ai-code-line', badLines.has(i + 1) && 'is-errline')}>
                 <HighlightLine text={l} />
@@ -278,16 +280,13 @@ export const PromptEditor = forwardRef<PromptEditorHandle, Props>(function Promp
                 apply(TOOLS[1]![0]!);
               }
             }}
-            onScroll={() => {
-              if (ta.current && hl.current) hl.current.scrollTop = ta.current.scrollTop;
-            }}
             spellCheck={false}
             maxLength={max}
             aria-label="Guion del agente"
             aria-invalid={p.issues.length > 0 || undefined}
             aria-describedby={p.issues.length ? 'guion-errores' : undefined}
             className={cn(
-              'absolute inset-0 m-0 size-full resize-none [scrollbar-gutter:stable] border-0 bg-transparent px-4 py-3 break-words whitespace-pre-wrap text-transparent caret-ink outline-none [overflow-wrap:anywhere] focus-visible:shadow-[inset_0_0_0_2px_var(--focus-ring)]',
+              'absolute inset-0 m-0 size-full resize-none overflow-hidden border-0 bg-transparent px-4 pt-3 pb-[33px] break-words whitespace-pre-wrap text-transparent caret-ink outline-none [overflow-wrap:anywhere] focus-visible:shadow-[inset_0_0_0_2px_var(--focus-ring)]',
               font,
             )}
           />

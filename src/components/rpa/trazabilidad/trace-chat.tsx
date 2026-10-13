@@ -10,8 +10,9 @@ import { cn } from '@/lib/utils';
 import { renderWhatsApp } from '@/lib/text-format';
 import { formatTime } from '@/lib/format';
 import { EVENT_INFO } from '@/lib/tipificaciones';
-import type { TraceEvent, TraceMessage } from '@/lib/api';
+import { imageUrls, type TraceEvent, type TraceMessage } from '@/lib/api';
 import { ICON } from '../common';
+import { VoiceNote } from '../voice-note';
 import { DeliveryState } from './parts';
 import mark from '@/assets/asiste-mark.png';
 
@@ -98,7 +99,34 @@ export function TraceChat({
             <Fragment key={m.id}>
               <div className={cn('ai-wa-msg', m.from, first && i > 0 && 'first')}>
                 <span className="sr-only">{m.from === 'client' ? 'Cliente: ' : 'Robot: '}</span>
-                {m.text ? renderWhatsApp(m.text) : <i className="text-wa-meta">(no se pudo descifrar)</i>}
+                {m.image !== undefined && (
+                  <figure className="m-0 mb-1">
+                    {m.image ? (
+                      <a href={imageUrls.version(m.image.brainId, m.image.version, m.image.id)} target="_blank" rel="noreferrer">
+                        <img
+                          src={imageUrls.version(m.image.brainId, m.image.version, m.image.id)}
+                          alt={`Imagen de planes «${m.image.sourceName}»`}
+                          loading="lazy"
+                          className="max-h-[220px] max-w-full rounded-sm"
+                        />
+                      </a>
+                    ) : (
+                      <i className="text-wa-meta">(imagen de planes de una versión que ya no existe)</i>
+                    )}
+                  </figure>
+                )}
+                {m.media?.kind === 'AUDIO' ? (
+                  <VoiceNote
+                    durationSec={m.media.durationSec}
+                    status={m.media.transcriptStatus}
+                    transcriptMs={m.media.transcriptMs}
+                    text={m.text}
+                  />
+                ) : m.text ? (
+                  renderWhatsApp(m.text)
+                ) : m.image !== undefined ? null : (
+                  <i className="text-wa-meta">(no se pudo descifrar)</i>
+                )}
                 <span className="ai-wa-time tabular-nums">
                   {formatTime(m.sentAt)}
                   {m.from === 'client' && <CheckCheck size={14} strokeWidth={1.75} aria-hidden />}

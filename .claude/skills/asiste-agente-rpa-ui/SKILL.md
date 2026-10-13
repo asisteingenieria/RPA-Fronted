@@ -45,7 +45,7 @@ Si el proyecto no tiene `lucide-react` o `@fontsource/*`, pide permiso antes de 
 1. **Sin datos personales ni contenido de mensajes reales.** Solo estados, conteos, ids y tiempos. Excepciones: el chat de simulación y la pestaña **Trazabilidad** (autorizada por Claro por escrito; es solo para ADMIN y el servidor audita cada apertura y exportación). Ver `reference/trazabilidad/SPEC-TRAZABILIDAD.md`.
 2. **Precios, planes y textos legales no se editan en el guion.** El catálogo es solo lectura; en el guion se insertan marcadores `{{OFERTA:CÓDIGO}}` en el cursor.
 3. **El flujo no es configurable visualmente.** Nada de editores de nodos; `StageTrack` solo muestra.
-4. **Publicar es inmediato (D-005).** La evaluación no frena la publicación: corre después (o con «Evaluar») y su `EvalReport` queda como evidencia en el historial de la versión. Mientras evalúa, refresca cada 5 s.
+4. **Publicar es inmediato (D-005).** La evaluación no frena la publicación. Guardar y publicar no evalúan (D-008, gasta tokens): se evalúa la versión publicada a pedido desde la sección «Evaluación» de la columna de ajustes, y su `EvalReport` queda como evidencia en el historial. Mientras evalúa, refresca cada 5 s.
 5. **Apagado de emergencia siempre visible** en el TopNav, a un clic con confirmación en línea, para ambos roles; **reanudar solo ADMIN**.
 6. **Confirmación** en: apagado, deshabilitar robot, desactivar usuario, restablecer contraseña, actualizar todos.
 7. **Secretos de un solo uso** (contraseña temporal, código de instalación) con `OneTimeSecret`; nunca se vuelven a mostrar.

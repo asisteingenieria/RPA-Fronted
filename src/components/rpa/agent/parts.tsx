@@ -1,6 +1,6 @@
 /** Piezas de la pantalla Agente (estilo Retell; kit: reference/screens/agente.*.png e historial.*.png). */
 import { useState, type ReactNode } from 'react';
-import { AlertTriangle, Ban, ChevronDown, Copy, FlaskConical, Lock, Plus, Rocket, Save, XCircle, CheckCircle2, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, Ban, ChevronDown, Copy, Lock, Plus, Rocket, Save, XCircle, CheckCircle2, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { AgentPlan, AgentStatus, EvalSummary, EvalVerdict } from '@/lib/api';
@@ -9,6 +9,7 @@ import { PROCESS_LABEL } from '@/lib/labels';
 import { ActionButton, CampaignChip, ICON, Segmented } from '../common';
 import { VersionStatus } from '../status';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { WhatsAppPreview, type ChatItem } from './whatsapp-preview';
 
 /* ───── Encabezado del agente ───── */
 export function AgentBar(p: {
@@ -19,20 +20,15 @@ export function AgentBar(p: {
   meta: ReactNode;
   unsaved: boolean;
   saving?: boolean;
-  evaluating?: boolean;
   publishing?: boolean;
   /** Motivo si no se puede editar (rol). */
   editReason?: string;
   /** Motivo si no se puede guardar (errores del guion…). */
   saveReason?: string;
-  /** Mostrar «Evaluar» (hay un borrador guardado sin evaluar o cuya evaluación no terminó). */
-  canEvaluate?: boolean;
-  evaluateReason?: string;
   /** Motivo si no se puede publicar (rol, errores del guion, nada que publicar). */
   publishReason?: string;
   onDiscard: () => void;
   onSave: () => void;
-  onEvaluate: () => void;
   onPublish: () => void;
 }) {
   return (
@@ -59,12 +55,7 @@ export function AgentBar(p: {
         <ActionButton variant="secondary" icon={Save} loading={p.saving} reason={p.editReason ?? p.saveReason} disabled={!p.unsaved} onClick={p.onSave}>
           Guardar…
         </ActionButton>
-        {p.canEvaluate && (
-          <ActionButton variant="secondary" icon={FlaskConical} loading={p.evaluating} reason={p.editReason ?? p.evaluateReason} onClick={p.onEvaluate}>
-            Evaluar
-          </ActionButton>
-        )}
-        {/* D-005: publicar es inmediato; la evaluación corre después como evidencia. */}
+        {/* D-005/D-008: publicar es inmediato y no evalúa; se evalúa a pedido en Configuración → Evaluación. */}
         <ActionButton icon={Rocket} loading={p.publishing} reason={p.editReason ?? p.publishReason} onClick={p.onPublish}>
           Publicar
         </ActionButton>
@@ -360,13 +351,14 @@ export function EvalReport({
                             {shown === c.id ? 'Ocultar la conversación' : 'Ver la conversación'}
                           </button>
                           {shown === c.id && (
-                            <ol className="m-0 mt-2 flex list-none flex-col gap-1 rounded-md bg-surface-200 p-3 text-xs">
-                              {c.transcript.map((m, i) => (
-                                <li key={i} className="whitespace-pre-wrap">
-                                  <b className={m.role === 'bot' ? 'text-primary-soft-ink' : 'text-ink'}>{m.role === 'bot' ? 'Robot' : 'Cliente'}:</b> {m.text}
-                                </li>
-                              ))}
-                            </ol>
+                            <WhatsAppPreview
+                              className="mt-2 max-w-[560px]"
+                              height={480}
+                              title={`Caso ${c.id}`}
+                              subtitle="Suite de evaluación · conversación simulada"
+                              items={caseChat(c.transcript)}
+                              lockedReason="Conversación de la suite de evaluación: solo lectura."
+                            />
                           )}
                         </div>
                       )}
@@ -380,4 +372,9 @@ export function EvalReport({
       )}
     </section>
   );
+}
+
+/** Transcripción de un caso de la suite como chat (la suite no guarda la hora de cada mensaje). */
+function caseChat(transcript: { role: 'cliente' | 'bot'; text: string }[]): ChatItem[] {
+  return transcript.map((m) => ({ kind: 'msg', from: m.role === 'bot' ? 'bot' : 'client', text: m.text, time: '' }));
 }

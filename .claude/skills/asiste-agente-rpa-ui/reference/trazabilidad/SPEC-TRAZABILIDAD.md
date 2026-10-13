@@ -160,6 +160,7 @@ Las formas JSON están en `templates/lib/trazabilidad-api.ts`: el backend debe r
 | Teléfono del cliente | No se guarda (solo `customerRefHash`) | Que el robot lo capture y lo guarde cifrado |
 | Origen de cada respuesta (plantilla / modelo / regenerada) | `LlmCall` es por etapa | Agregar `messageId` a `LlmCall` |
 | Qué pasó después de la transferencia | Vive en Abaya | Integración con el backoffice (fuera de alcance) |
+| Notas de voz del cliente (`messages[].media`) | Hoy llegan como `[audio]` y se escala | RobotRPA D-010: se transcribe con Gemini en el servidor (falta que el robot descargue el audio). El panel muestra «Nota de voz · duración · estado» + transcripción si el campo viene; nunca un reproductor (el audio no se guarda) |
 
 ## 5. Por confirmar con el negocio
 

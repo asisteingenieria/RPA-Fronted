@@ -10,14 +10,17 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BookOpen,
+  Download,
   FileSpreadsheet,
   FileText,
   FlaskConical,
   Globe,
   History,
+  Image as ImageIcon,
   Library,
   Link2,
   Link2Off,
+  Pencil,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -30,19 +33,25 @@ import { toast } from 'sonner';
 import {
   api,
   errorMessage,
+  imageDiscounts,
+  imageUrls,
   type BrainDetail,
   type BrainDiff,
   type BrainListItem,
   type BrainTestResult,
   type BrainVersionSummary,
+  type ImageDiscounts,
   type KnowledgeSource,
   type KnowledgeUse,
+  type PlanImageCard,
   type SaleProcess,
+  type VersionImageRow,
 } from '@/lib/api';
 import { fmtDateTime, fmtWhen, formatBytes, formatCOP, formatInt } from '@/lib/format';
 import { KIND_LABEL, PROCESS_LABEL, USE_HELP, USE_LABEL } from '@/lib/labels';
 import { publishKnowledgeReason, reasonFor } from '@/lib/roles';
 import { cn } from '@/lib/utils';
+import { downloadJson, exportName } from '@/lib/download';
 import { useUser } from '@/auth/session';
 import {
   ActionButton,
@@ -60,6 +69,7 @@ import {
 import { SourceState, VersionStatus } from '@/components/rpa/status';
 import { EvalReport } from '@/components/rpa/agent/parts';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -202,16 +212,28 @@ function BrainListRow({ brain: b, active, onSelect }: { brain: BrainListItem; ac
 
 function CreateBrainDialog({ open, onOpenChange, onCreated }: { open: boolean; onOpenChange: (o: boolean) => void; onCreated: (id: string) => void }) {
   const [name, setName] = useState('');
+  // D-019: o importar uno exportado de otro ambiente (local → producción).
+  const [mode, setMode] = useState<'nuevo' | 'importar'>('nuevo');
+  const [file, setFile] = useState<File | null>(null);
+  const importing = mode === 'importar';
   const create = useBrainMutation(
-    () => api.createBrain(name.trim()),
-    (r) => {
+    async () => {
+      if (!importing) return api.createBrain(name.trim());
+      const r = await api.importBrain(file!, name);
+      return { id: r.id, name: r.name, imported: r.sources };
+    },
+    (r: { id: string; name: string; imported?: number }) => {
       onCreated(r.id);
       onOpenChange(false);
       setName('');
-      return `Brain «${r.name}» creado`;
+      setFile(null);
+      return r.imported !== undefined
+        ? `Brain «${r.name}» importado con ${r.imported} fuentes: revisa el borrador y publícalo`
+        : `Brain «${r.name}» creado`;
     },
-    'No se pudo crear el Brain.',
+    importing ? 'No se pudo importar el Brain.' : 'No se pudo crear el Brain.',
   );
+  const ready = importing ? !!file : !!name.trim();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[440px]">
@@ -223,17 +245,51 @@ function CreateBrainDialog({ open, onOpenChange, onCreated }: { open: boolean; o
           className="flex flex-col gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            if (name.trim()) create.mutate();
+            if (ready) create.mutate();
           }}
         >
-          <Label htmlFor="brain-name">Nombre</Label>
+          <Segmented
+            label="Cómo crearlo"
+            value={mode}
+            onChange={setMode}
+            items={[
+              { id: 'nuevo', label: 'Vacío', icon: Plus },
+              { id: 'importar', label: 'Importar de otro ambiente', icon: Upload },
+            ]}
+          />
+          {importing && (
+            <div className="mt-2 flex flex-col gap-1.5">
+              <Label htmlFor="brain-file">Archivo exportado (.json)</Label>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  id="brain-file"
+                  type="file"
+                  accept=".json,application/json"
+                  className="sr-only"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
+                <Button type="button" variant="secondary" size="sm" onClick={() => document.getElementById('brain-file')?.click()}>
+                  <Upload {...ICON} aria-hidden />
+                  Elegir archivo
+                </Button>
+                <span className="min-w-0 truncate text-[13px] text-ink-muted">{file ? file.name : 'Ningún archivo elegido'}</span>
+              </div>
+              <span className="text-xs text-ink-subtle">
+                Se crea un Brain nuevo en borrador con las mismas fuentes: las imágenes llegan con lo leído y sus descuentos (no se vuelven a
+                leer), el catálogo y los documentos se procesan otra vez. Después publícalo y conéctalo al agente.
+              </span>
+            </div>
+          )}
+          <Label htmlFor="brain-name" className="mt-2">
+            {importing ? 'Nombre (opcional: por defecto, el del archivo)' : 'Nombre'}
+          </Label>
           <Input id="brain-name" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder="Catálogo Claro Móvil" autoFocus />
           <DialogFooter className="mt-3">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <ActionButton type="submit" loading={create.isPending} disabled={!name.trim()}>
-              Crear Brain
+            <ActionButton type="submit" loading={create.isPending} disabled={!ready}>
+              {importing ? 'Importar Brain' : 'Crear Brain'}
             </ActionButton>
           </DialogFooter>
         </form>
@@ -273,6 +329,16 @@ function BrainDetailView({ brainId, onDeleted }: { brainId: string; onDeleted: (
     'No se pudo publicar.',
     brainId,
   );
+  // Una versión rechazada no se vuelve a publicar tal cual: se restaura como borrador y se publica.
+  const retry = useBrainMutation(
+    async () => {
+      await api.restoreBrainVersion(brainId, working!.version);
+      return api.publishBrain(brainId);
+    },
+    (r) => `Evaluación iniciada: v${r.version}`,
+    'No se pudo volver a intentar.',
+    brainId,
+  );
   const connect = useBrainMutation(() => api.connectBrain(brainId), () => 'Brain conectado al agente', 'No se pudo conectar.', brainId);
   const disconnect = useBrainMutation(() => api.disconnectBrain(brainId), () => 'Brain desconectado del agente', 'No se pudo desconectar.', brainId);
   const remove = useBrainMutation(() => api.deleteBrain(brainId), () => 'Brain eliminado', 'No se pudo eliminar.');
@@ -284,6 +350,18 @@ function BrainDetailView({ brainId, onDeleted }: { brainId: string; onDeleted: (
   );
   // Reprocesar recibe la fuente en cada llamada.
   const qc = useQueryClient();
+  // D-019: el Brain con sus fuentes como archivo, para llevarlo a otro ambiente.
+  const exportBrain = async () => {
+    try {
+      const name = b?.name ?? 'brain';
+      downloadJson(await api.exportBrain(brainId), exportName(`brain-${name}`));
+      toast.success(`«${name}» exportado: impórtalo en el otro ambiente con «Crear Brain» → «Importar»`);
+    } catch (err) {
+      toast.error(errorMessage(err, 'No se pudo exportar el Brain.'));
+    }
+  };
+  // D-016: procesos y descuentos de una imagen ya cargada.
+  const [editingImage, setEditingImage] = useState<KnowledgeSource | null>(null);
   const runReprocess = async (s: KnowledgeSource) => {
     try {
       await api.reprocessSource(brainId, s.id);
@@ -366,6 +444,12 @@ function BrainDetailView({ brainId, onDeleted }: { brainId: string; onDeleted: (
             Publicar Brain con evaluación
           </ActionButton>
           <IconAction
+            icon={Download}
+            label="Exportar Brain (para otro ambiente)"
+            reason={manageReason}
+            onClick={() => void exportBrain()}
+          />
+          <IconAction
             icon={Trash2}
             label="Eliminar Brain"
             danger
@@ -381,7 +465,17 @@ function BrainDetailView({ brainId, onDeleted }: { brainId: string; onDeleted: (
           tanto no se pueden cambiar las fuentes.
         </Callout>
       )}
-      {working?.status === 'REJECTED' && working.evalSummary && <EvalReport version={working.version} summary={working.evalSummary} />}
+      {working?.status === 'REJECTED' && working.evalSummary && (
+        <div className="flex flex-col gap-2">
+          <EvalReport version={working.version} summary={working.evalSummary} />
+          <div className="flex flex-wrap items-center gap-3">
+            <ActionButton icon={RotateCcw} reason={publishReason ?? (processing ? 'Espera a que terminen de procesarse las fuentes' : undefined)} loading={retry.isPending} onClick={() => retry.mutate()}>
+              Volver a intentar con la v{working.version}
+            </ActionButton>
+            <span className="text-xs text-ink-subtle">Arma un borrador con el mismo contenido y lo publica con una evaluación nueva.</span>
+          </div>
+        </div>
+      )}
       {working?.status === 'DRAFT' && working.diff && <ChangesSummary version={working.version} against={published?.version ?? null} diff={working.diff} />}
 
       <SourcesPanel
@@ -390,6 +484,7 @@ function BrainDetailView({ brainId, onDeleted }: { brainId: string; onDeleted: (
         onAdd={() => setAdding(true)}
         onRemove={(s) => setConfirm({ source: s })}
         onReprocess={(s) => void runReprocess(s)}
+        onEditImage={setEditingImage}
       />
       <PreviewPanel brainId={brainId} published={published} working={working} />
       <TestPanel
@@ -401,6 +496,12 @@ function BrainDetailView({ brainId, onDeleted }: { brainId: string; onDeleted: (
       <HistoryPanel brainId={brainId} versions={b.versions} restoreReason={publishReason ?? (evaluating ? 'Hay una versión en evaluación' : undefined)} />
 
       <AddSourceDialog open={adding} onOpenChange={setAdding} brain={b} />
+      <EditImageDialog
+        brainId={brainId}
+        source={editingImage}
+        hasCatalog={b.sources.some((s) => s.use === 'CATALOG')}
+        onClose={() => setEditingImage(null)}
+      />
       <ConfirmDialog
         open={confirm === 'delete'}
         onOpenChange={(o) => !o && setConfirm(null)}
@@ -442,7 +543,9 @@ function ChangesSummary({ version, against, diff }: { version: number; against: 
   const [open, setOpen] = useState(false);
   const docs = diff.documents;
   const docChanges = docs ? docs.added.length + docs.removed.length + docs.changed.length : 0;
-  const total = diff.added.length + diff.removed.length + diff.changed.length + docChanges;
+  const imgs = diff.images;
+  const imageChanges = imgs ? imgs.added.length + imgs.removed.length + imgs.changed.length : 0;
+  const total = diff.added.length + diff.removed.length + diff.changed.length + docChanges + imageChanges;
   return (
     <Panel
       title={`Cambios del borrador v${version}`}
@@ -459,6 +562,7 @@ function ChangesSummary({ version, against, diff }: { version: number; against: 
         <Chip tone="danger">−{plural(diff.removed.length, 'plan', 'planes')}</Chip>
         <Chip tone="warning">~{plural(diff.changed.length, 'plan cambiado', 'planes cambiados')}</Chip>
         {docs && <Chip tone="info">{plural(docChanges, 'documento', 'documentos')}</Chip>}
+        {imageChanges > 0 && <Chip tone="info">{plural(imageChanges, 'imagen', 'imágenes')}</Chip>}
         <span className="self-center text-xs text-ink-subtle">
           {total ? 'Publicar corre la suite de evaluación antes de que el agente use estos cambios.' : 'Sin cambios.'}
         </span>
@@ -486,6 +590,16 @@ function ChangesSummary({ version, against, diff }: { version: number; against: 
             [...docs.added.map((d) => `+ ${d.source}`), ...docs.removed.map((d) => `− ${d.source}`), ...docs.changed.map((d) => `~ ${d.source}`)].map((l) => (
               <p key={l} className="m-0">
                 Documento {l}
+              </p>
+            ))}
+          {imgs &&
+            [
+              ...imgs.added.map((d) => ['+', d] as const),
+              ...imgs.removed.map((d) => ['−', d] as const),
+              ...imgs.changed.map((d) => ['~', d] as const),
+            ].map(([sign, d]) => (
+              <p key={`${sign}${d.source}`} className="m-0">
+                Imagen {sign} {d.source} · {d.processes.map((p) => PROCESS_LABEL[p]).join(', ')}
               </p>
             ))}
         </div>
@@ -519,12 +633,14 @@ function SourcesPanel({
   onAdd,
   onRemove,
   onReprocess,
+  onEditImage,
 }: {
   brain: BrainDetail;
   manageReason?: string;
   onAdd: () => void;
   onRemove: (s: KnowledgeSource) => void;
   onReprocess: (s: KnowledgeSource) => void;
+  onEditImage: (s: KnowledgeSource) => void;
 }) {
   return (
     <Panel
@@ -539,7 +655,7 @@ function SourcesPanel({
     >
       {!brain.sources.length ? (
         <Empty icon={Upload} title="Sin fuentes">
-          Agrega el catálogo de planes (Excel o CSV), un texto o una página web.
+          Agrega el catálogo de planes (Excel o CSV), un texto, una página web o las imágenes de los planes.
         </Empty>
       ) : (
         <div className="overflow-x-auto">
@@ -557,7 +673,7 @@ function SourcesPanel({
             </TableHeader>
             <TableBody>
               {brain.sources.map((s) => {
-                const I = KIND_ICON[s.kind];
+                const I = s.use === 'IMAGE' ? ImageIcon : KIND_ICON[s.kind];
                 const warnings = (s.issues ?? []).filter((i) => s.status !== 'ERROR' || !i.row);
                 return (
                   <TableRow key={s.id} className="align-top">
@@ -571,6 +687,8 @@ function SourcesPanel({
                           <div className="text-xs text-ink-subtle">
                             {KIND_LABEL[s.kind]}
                             {s.metadata?.proceso && ` · solo ${PROCESS_LABEL[s.metadata.proceso]}`}
+                            {s.image && ` · ${imageScope(s.image)}`}
+                            {s.image && discountScope(s)}
                             {s.kind === 'WEB' && (s.refreshHours ? ` · cada ${refreshLabel(s.refreshHours)}` : ' · actualización manual')}
                           </div>
                         </div>
@@ -585,12 +703,33 @@ function SourcesPanel({
                       )}
                       {s.status === 'ERROR' && (s.issues ?? []).some((i) => i.row) && <IssuesList issues={(s.issues ?? []).filter((i) => i.row)} tone="danger" />}
                       {warnings.length > 0 && <IssuesList issues={warnings} tone="warning" />}
+                      {s.image && s.status === 'READY' && <ImageCheck problems={s.image.problems} />}
                     </TableCell>
                     <TableCell className="tabular-nums text-ink-muted">
-                      {s.use === 'CATALOG' ? (s.status === 'READY' ? 'Registros del catálogo' : '—') : s.chunks ? plural(s.chunks, 'fragmento', 'fragmentos') : '—'}
+                      {s.image ? (
+                        <SourceImage brainId={brain.id} source={s} />
+                      ) : s.use === 'CATALOG' ? (
+                        s.status === 'READY' ? (
+                          'Registros del catálogo'
+                        ) : (
+                          '—'
+                        )
+                      ) : s.chunks ? (
+                        plural(s.chunks, 'fragmento', 'fragmentos')
+                      ) : (
+                        '—'
+                      )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-ink-muted">{fmtWhen(s.lastIngestedAt)}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
+                      {s.use === 'IMAGE' && (
+                        <IconAction
+                          icon={Pencil}
+                          label="Procesos y descuentos"
+                          reason={manageReason ?? (s.status === 'PROCESSING' ? 'Se está leyendo la imagen' : undefined)}
+                          onClick={() => onEditImage(s)}
+                        />
+                      )}
                       <IconAction
                         icon={RefreshCw}
                         label={s.kind === 'WEB' ? 'Actualizar ahora' : 'Reprocesar'}
@@ -607,6 +746,209 @@ function SourcesPanel({
         </div>
       )}
     </Panel>
+  );
+}
+
+/** D-011: resultado de comparar la imagen con el catálogo (con problemas no se puede publicar). */
+function ImageCheck({ problems }: { problems: string[] }) {
+  if (!problems.length) return <div className="mt-1 text-xs text-success">Coincide con el catálogo</div>;
+  return <IssuesList issues={problems.map((message) => ({ message }))} tone="danger" />;
+}
+
+const cardLabel = (c: PlanImageCard) => `${c.code ? `${c.code} · ` : ''}${c.dataText} · ${formatCOP(c.priceCop)}`;
+
+/** D-014: a qué procesos aplica una imagen (la circular de apps de video, a todos). */
+const imageScope = (i: { processes: SaleProcess[]; videoApps?: boolean }) =>
+  i.videoApps ? 'Apps de video · todos los procesos' : i.processes.map((p) => PROCESS_LABEL[p]).join(', ');
+
+/** D-016: procesos en los que los planes de la imagen tienen descuento. */
+const discountScope = (s: KnowledgeSource) => {
+  const withDiscount = Object.keys(imageDiscounts(s)) as SaleProcess[];
+  return withDiscount.length ? ` · con descuento en ${withDiscount.map((p) => PROCESS_LABEL[p]).join(', ')}` : '';
+};
+
+const DISCOUNT_MAX = 300;
+
+/**
+ * D-016: descuento de los planes de la imagen en cada proceso. Las imágenes no lo traen impreso;
+ * lo escrito aquí es el «Descuento» de esos planes y el agente lo ofrece tal cual (sus cifras se
+ * verifican contra este texto).
+ */
+function DiscountFields({
+  processes,
+  value,
+  onChange,
+}: {
+  processes: SaleProcess[];
+  value: ImageDiscounts;
+  onChange: (v: ImageDiscounts) => void;
+}) {
+  if (!processes.length) return null;
+  return (
+    <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+      <legend className="mb-1.5 text-sm leading-none font-medium">Descuento de estos planes (opcional)</legend>
+      {processes.map((p) => {
+        const id = `desc-${p}`;
+        const text = value[p] ?? '';
+        return (
+          <div key={p} className="flex flex-col gap-1">
+            <Label htmlFor={id} className="text-xs text-ink-muted">
+              En {PROCESS_LABEL[p]}
+            </Label>
+            <Textarea
+              id={id}
+              rows={2}
+              maxLength={DISCOUNT_MAX}
+              value={text}
+              placeholder="✅Descuento del 25% en la 1 y 2 facturación"
+              className="min-h-[56px] text-[13px]"
+              onChange={(e) => onChange({ ...value, [p]: e.target.value })}
+            />
+          </div>
+        );
+      })}
+      <span className="text-xs text-ink-subtle">
+        Vacío = sin descuento en ese proceso. El agente lo ofrece solo para los planes de esta imagen, tal como está escrito; puedes poner varias
+        opciones, una por línea. Máximo {DISCOUNT_MAX} caracteres.
+      </span>
+    </fieldset>
+  );
+}
+
+/** D-016: cambiar los procesos y el descuento de una imagen ya cargada (no se vuelve a leer). */
+function EditImageDialog({
+  brainId,
+  source,
+  hasCatalog,
+  onClose,
+}: {
+  brainId: string;
+  source: KnowledgeSource | null;
+  /** Con Excel, el descuento va en su columna Descuento (las imágenes solo lo muestran). */
+  hasCatalog: boolean;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const videoApps = !!source?.image?.videoApps;
+  const [procesos, setProcesos] = useState<SaleProcess[]>([]);
+  const [descuentos, setDescuentos] = useState<ImageDiscounts>({});
+  useEffect(() => {
+    if (!source) return;
+    setProcesos(source.image?.processes ?? []);
+    setDescuentos(imageDiscounts(source));
+  }, [source]);
+  const active = videoApps ? PROCESSES : procesos;
+  const save = useMutation({
+    mutationFn: () =>
+      api.updateImageSource(brainId, source!.id, {
+        procesos: active,
+        // Solo los descuentos de los procesos que quedan marcados.
+        descuentos: Object.fromEntries(active.map((p) => [p, (descuentos[p] ?? '').trim()])),
+      }),
+    onSuccess: (r) => {
+      toast.success(r.draftVersion ? `Guardado en el borrador v${r.draftVersion}: publícalo para que el agente lo use` : 'Sin cambios frente a lo publicado');
+      onClose();
+    },
+    onError: (err) => toast.error(errorMessage(err, 'No se pudo guardar.')),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: knowledgeKeys.brain(brainId) });
+      void qc.invalidateQueries({ queryKey: knowledgeKeys.brains });
+    },
+  });
+  return (
+    <Dialog open={!!source} onOpenChange={(o) => !o && !save.isPending && onClose()}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>«{source?.name}»</DialogTitle>
+          <DialogDescription>Procesos en los que se envía y descuento de sus planes. No se vuelve a leer la imagen; el cambio queda en el borrador.</DialogDescription>
+        </DialogHeader>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (active.length) save.mutate();
+          }}
+        >
+          <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+            <legend className="mb-1.5 text-sm leading-none font-medium">Se envía en</legend>
+            <div className="flex flex-wrap gap-2">
+              {PROCESSES.map((p) => (
+                <label key={p} className={cn('flex items-center gap-2 rounded-md border px-3 py-2 text-[13px]', videoApps ? 'opacity-50' : 'cursor-pointer')}>
+                  <Checkbox
+                    disabled={videoApps}
+                    checked={active.includes(p)}
+                    onCheckedChange={(c) => setProcesos((x) => (c === true ? PROCESSES.filter((y) => y === p || x.includes(y)) : x.filter((y) => y !== p)))}
+                  />
+                  {PROCESS_LABEL[p]}
+                </label>
+              ))}
+            </div>
+            {videoApps && <span className="text-xs text-ink-subtle">La circular de apps de video se envía siempre en los tres procesos.</span>}
+          </fieldset>
+          {hasCatalog ? (
+            <span className="text-xs text-ink-subtle">Este Brain tiene Excel: el descuento de cada plan va en su columna «Descuento».</span>
+          ) : (
+            <DiscountFields processes={active} value={descuentos} onChange={setDescuentos} />
+          )}
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={onClose} disabled={save.isPending}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={!active.length || save.isPending}>
+              {save.isPending ? 'Guardando…' : 'Guardar en el borrador'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const CARD_FIELDS: [keyof PlanImageCard, string][] = [
+  ['sharedDataText', 'Para compartir'],
+  ['includesText', 'Incluye'],
+  ['unlimitedAppsText', 'Apps sin consumo'],
+  ['callsText', 'Llamadas y mensajes'],
+];
+
+/** D-014: todo lo leído de una tarjeta: es lo único que el agente puede decir de ese plan. */
+function CardDetails({ card: c }: { card: PlanImageCard }) {
+  const extra = CARD_FIELDS.filter(([k]) => c[k]);
+  return (
+    <li className="mb-1 last:mb-0">
+      <span className="font-medium text-ink tabular-nums">{cardLabel(c)}</span>
+      {extra.map(([k, label]) => (
+        <div key={k} className="text-ink-subtle">
+          {label}: {String(c[k])}
+        </div>
+      ))}
+    </li>
+  );
+}
+
+/** Miniatura y planes leídos de una imagen de planes. */
+function SourceImage({ brainId, source: s }: { brainId: string; source: KnowledgeSource }) {
+  const cards = s.image?.cards;
+  return (
+    <div className="flex min-w-[200px] items-start gap-3">
+      <a href={imageUrls.source(brainId, s.id)} target="_blank" rel="noreferrer" className="shrink-0 rounded-sm focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none">
+        <img src={imageUrls.source(brainId, s.id)} alt={`Imagen «${s.name}»`} loading="lazy" className="h-16 w-24 rounded-sm border bg-surface-100 object-contain" />
+      </a>
+      <div className="min-w-0 text-xs">
+        {cards === null || cards === undefined ? (
+          '—'
+        ) : (
+          <>
+            <b className="font-semibold text-ink">{plural(cards.length, 'plan leído', 'planes leídos')}</b>
+            <ul className="m-0 mt-0.5 list-none p-0">
+              {cards.map((c, i) => (
+                <CardDetails key={i} card={c} />
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -645,6 +987,10 @@ function AddSourceDialog({ open, onOpenChange, brain }: { open: boolean; onOpenC
   const [mode, setMode] = useState<AddMode>('archivos');
   const [use, setUse] = useState<KnowledgeUse>('CATALOG');
   const [proceso, setProceso] = useState<SaleProcess | ''>('');
+  const [procesos, setProcesos] = useState<SaleProcess[]>([]);
+  const [appsVideo, setAppsVideo] = useState(false);
+  // D-016: descuento de los planes de la imagen en cada proceso.
+  const [descuentos, setDescuentos] = useState<ImageDiscounts>({});
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState('');
   const [text, setText] = useState('');
@@ -654,18 +1000,30 @@ function AddSourceDialog({ open, onOpenChange, brain }: { open: boolean; onOpenC
   useEffect(() => {
     if (open) return;
     setFile(null);
+    setAppsVideo(false);
+    setDescuentos({});
     setName('');
     setText('');
     setUrl('');
   }, [open]);
   useEffect(() => {
-    // El catálogo solo se carga como archivo (Excel o CSV).
-    if (mode !== 'archivos' && use === 'CATALOG') setUse('SEARCH');
+    // El catálogo y las imágenes solo se cargan como archivo.
+    if (mode !== 'archivos' && (use === 'CATALOG' || use === 'IMAGE')) setUse('SEARCH');
   }, [mode, use]);
+  useEffect(() => setFile(null), [use]);
+  const image = use === 'IMAGE';
 
   const add = useMutation({
     mutationFn: () => {
-      const o = { use, proceso: use === 'CATALOG' ? '' : proceso };
+      const imageProcesses = appsVideo ? PROCESSES : procesos;
+      const o = image
+        ? {
+            use,
+            procesos: appsVideo ? [] : procesos,
+            appsVideo,
+            descuentos: Object.fromEntries(imageProcesses.map((p) => [p, descuentos[p] ?? ''])),
+          }
+        : { use, proceso: use === 'CATALOG' ? '' : proceso };
       if (mode === 'archivos') return api.addFileSource(brain.id, file!, o);
       if (mode === 'texto') return api.addTextSource(brain.id, { ...o, name: name.trim(), text });
       return api.addWebSource(brain.id, { ...o, url: url.trim(), refreshHours: refresh === 'manual' ? null : Number(refresh) });
@@ -681,11 +1039,20 @@ function AddSourceDialog({ open, onOpenChange, brain }: { open: boolean; onOpenC
     },
   });
 
-  const maxBytes = use === 'CATALOG' ? brain.limits.catalogMaxBytes : brain.limits.documentMaxBytes;
-  const accept = use === 'CATALOG' ? '.xlsx,.csv' : '.pdf,.docx,.txt,.md';
+  const maxBytes = image
+    ? (brain.limits.imageMaxBytes ?? 3 * 1024 * 1024)
+    : use === 'CATALOG'
+      ? brain.limits.catalogMaxBytes
+      : brain.limits.documentMaxBytes;
+  const accept = image ? '.jpg,.jpeg,.png,.webp' : use === 'CATALOG' ? '.xlsx,.csv' : '.pdf,.docx,.txt,.md';
   const fileProblem = file && file.size > maxBytes ? `El archivo supera ${formatBytes(maxBytes)}.` : undefined;
   const ready =
-    mode === 'archivos' ? !!file && !fileProblem : mode === 'texto' ? !!name.trim() && !!text.trim() && text.length <= brain.limits.textMaxChars : /^https:\/\//i.test(url.trim());
+    mode === 'archivos'
+      ? !!file && !fileProblem && (!image || appsVideo || procesos.length > 0)
+      : mode === 'texto'
+        ? !!name.trim() && !!text.trim() && text.length <= brain.limits.textMaxChars
+        : /^https:\/\//i.test(url.trim());
+  const hasCatalog = brain.sources.some((s) => s.use === 'CATALOG');
 
   return (
     <Dialog open={open} onOpenChange={(o) => !add.isPending && onOpenChange(o)}>
@@ -720,6 +1087,7 @@ function AddSourceDialog({ open, onOpenChange, brain }: { open: boolean; onOpenC
               </SelectTrigger>
               <SelectContent>
                 {mode === 'archivos' && <SelectItem value="CATALOG">Catálogo de planes (Excel o CSV)</SelectItem>}
+                {mode === 'archivos' && <SelectItem value="IMAGE">Imagen de planes (JPG, PNG o WEBP)</SelectItem>}
                 <SelectItem value="FULL_CONTEXT">Contexto completo</SelectItem>
                 <SelectItem value="SEARCH">Búsqueda</SelectItem>
               </SelectContent>
@@ -727,7 +1095,45 @@ function AddSourceDialog({ open, onOpenChange, brain }: { open: boolean; onOpenC
             <span className="text-xs text-ink-subtle">{USE_HELP[use]}</span>
           </div>
 
-          {use !== 'CATALOG' && (
+          {image && (
+            <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+              <legend className="mb-1.5 text-sm leading-none font-medium">Se envía en</legend>
+              <div className="flex flex-wrap gap-2">
+                {PROCESSES.map((p) => (
+                  <label key={p} className={cn('flex items-center gap-2 rounded-md border px-3 py-2 text-[13px]', appsVideo ? 'opacity-50' : 'cursor-pointer')}>
+                    <Checkbox
+                      disabled={appsVideo}
+                      checked={appsVideo || procesos.includes(p)}
+                      onCheckedChange={(c) => setProcesos((x) => (c === true ? [...x, p] : x.filter((y) => y !== p)))}
+                    />
+                    {PROCESS_LABEL[p]}
+                  </label>
+                ))}
+              </div>
+              <label className="mt-1 flex cursor-pointer items-start gap-2 rounded-md border px-3 py-2 text-[13px]">
+                <Checkbox className="mt-0.5" checked={appsVideo} onCheckedChange={(c) => setAppsVideo(c === true)} />
+                <span>
+                  <b className="font-semibold">Apps de video</b>
+                  <span className="block text-xs text-ink-subtle">Circular de suscripción a apps de video: aplica a los tres procesos y se envía solo si el cliente habla de plataformas de video. No cuenta para el máximo por proceso.</span>
+                </span>
+              </label>
+              <span className="text-xs text-ink-subtle">
+                El agente la envía cuando ofrece planes en ese proceso (máximo {brain.limits.imagesPerProcess ?? 5} imágenes por proceso).
+              </span>
+              {!hasCatalog && (
+                <div className="mt-2">
+                  <DiscountFields processes={appsVideo ? PROCESSES : PROCESSES.filter((p) => procesos.includes(p))} value={descuentos} onChange={setDescuentos} />
+                </div>
+              )}
+              {!hasCatalog && (
+                <Callout tone="info" icon={ImageIcon}>
+                  Este Brain no tiene Excel: los planes salen de lo que se lea en las imágenes y el agente ofrece solo con imágenes. Revisa lo leído de cada tarjeta antes de publicar.
+                </Callout>
+              )}
+            </fieldset>
+          )}
+
+          {use !== 'CATALOG' && !image && (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="src-proc">Aplica a</Label>
               <Select value={proceso || 'todos'} onValueChange={(v) => setProceso(v === 'todos' ? '' : (v as SaleProcess))}>
@@ -767,7 +1173,9 @@ function AddSourceDialog({ open, onOpenChange, brain }: { open: boolean; onOpenC
               </div>
               <span className={cn('text-xs', fileProblem ? 'text-danger' : 'text-ink-subtle')}>
                 {fileProblem ??
-                  (use === 'CATALOG'
+                  (image
+                    ? `JPG, PNG o WEBP. Se lee cada tarjeta (código, GB, para compartir, qué incluye, apps sin consumo, llamadas y precio). Máximo ${formatBytes(maxBytes)}.`
+                    : use === 'CATALOG'
                     ? `Columnas: Proceso, ID, Datos, GB para compartir, Incluye, Servicios adicionales, Apps ilimitadas, Llamadas y mensajes, Precio, Descuento (Nombre opcional). Máximo ${formatBytes(maxBytes)}.`
                     : `PDF, DOCX, TXT o MD. Máximo ${formatBytes(maxBytes)}.`)}
               </span>
@@ -900,7 +1308,10 @@ function PreviewPanel({ brainId, published, working }: { brainId: string; publis
               ))}
             </div>
           )}
-          {!q.data.records.length && !q.data.documents.length && process === 'todos' && (
+          {((q.data.images?.length ?? 0) > 0 || (q.data.imageProblems?.length ?? 0) > 0) && (
+            <VersionImages brainId={brainId} version={v} images={q.data.images ?? []} problems={q.data.imageProblems ?? []} />
+          )}
+          {!q.data.records.length && !q.data.documents.length && !q.data.images?.length && process === 'todos' && (
             <Empty icon={BookOpen} title="Versión vacía">
               No tiene planes ni documentos.
             </Empty>
@@ -908,6 +1319,49 @@ function PreviewPanel({ brainId, published, working }: { brainId: string; publis
         </div>
       ) : null}
     </Panel>
+  );
+}
+
+/** D-011: imágenes de la versión, en el orden en que las envía el agente. */
+function VersionImages({ brainId, version, images, problems }: { brainId: string; version: number; images: VersionImageRow[]; problems: string[] }) {
+  return (
+    <div className="flex flex-col gap-3 border-t px-5 py-4">
+      <b className="text-[13px] font-semibold">Imágenes de planes · {formatInt(images.length)}</b>
+      {problems.length > 0 && (
+        <Callout tone="danger" icon={ImageIcon}>
+          No se puede publicar: {problems.length === 1 ? 'una imagen no coincide' : 'hay imágenes que no coinciden'} con el catálogo de esta versión.
+          <IssuesList issues={problems.map((message) => ({ message }))} tone="danger" />
+        </Callout>
+      )}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+        {images.map((img) => (
+          <figure key={img.id} className="m-0 flex flex-col gap-2 rounded-md border p-2.5">
+            <img
+              src={imageUrls.version(brainId, version, img.id)}
+              alt={`Imagen «${img.sourceName}»`}
+              loading="lazy"
+              className="h-36 w-full rounded-sm bg-surface-100 object-contain"
+            />
+            <figcaption className="flex flex-col gap-1 text-xs">
+              <b className="truncate text-[13px] font-semibold" title={img.sourceName}>
+                {img.sourceName}
+              </b>
+              <span className="text-ink-muted">{imageScope(img)}</span>
+              {img.cards.length ? (
+                <ul className="m-0 list-none p-0 text-ink-muted">
+                  {img.cards.map((c, i) => (
+                    <CardDetails key={i} card={c} />
+                  ))}
+                </ul>
+              ) : (
+                <span className="text-ink-muted">—</span>
+              )}
+              <ImageCheck problems={img.problems} />
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
   );
 }
 

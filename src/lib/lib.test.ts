@@ -1,3 +1,4 @@
+import { encodeWav } from './voice-recorder';
 import { describe, expect, it } from 'vitest';
 import { fmtMs, formatAgo, formatCOP, formatDuration, formatPct, formatTime, initials } from './format';
 import { HIGHLIGHT_RE, lintGuion } from './guion-lint';
@@ -107,5 +108,20 @@ describe('diferencias del guion (D-004)', () => {
       { type: 'add', text: '- Nueva regla' },
     ]);
     expect(diffLines('a\nb', 'a\nb').every((r) => r.type === 'same')).toBe(true);
+  });
+});
+
+describe('encodeWav (D-010: nota de voz de prueba)', () => {
+  it('WAV PCM 16 bits mono con la cabecera correcta', async () => {
+    const blob = encodeWav(new Float32Array([0, 1, -1, 0.5]), 16_000);
+    expect(blob.type).toBe('audio/wav');
+    const v = new DataView(await blob.arrayBuffer());
+    const tag = (o: number) => String.fromCharCode(...[0, 1, 2, 3].map((i) => v.getUint8(o + i)));
+    expect([tag(0), tag(8), tag(12), tag(36)]).toEqual(['RIFF', 'WAVE', 'fmt ', 'data']);
+    expect(v.getUint16(22, true)).toBe(1); // mono
+    expect(v.getUint32(24, true)).toBe(16_000);
+    expect(v.getUint32(40, true)).toBe(8); // 4 muestras × 2 bytes
+    expect(v.getInt16(46, true)).toBe(0x7fff);
+    expect(v.getInt16(48, true)).toBe(-0x8000);
   });
 });

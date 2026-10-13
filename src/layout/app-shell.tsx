@@ -4,8 +4,13 @@
  * (solo ADMIN). Trazabilidad la usa el ADMIN; el OPERADOR la ve deshabilitada con candado y motivo.
  * Debajo de 1280 px las pestañas quedan con ícono y tooltip; debajo de 768 px, menú hamburguesa.
  */
-import { useEffect, useState } from 'react';
-import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
+import { useEffect, useState } from "react";
+import {
+  Link,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import {
   Activity,
   Bell,
@@ -25,16 +30,20 @@ import {
   Users,
   X,
   type LucideIcon,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { formatClock, fmtTime, initials } from '@/lib/format';
-import { viewConversationsReason } from '@/lib/roles';
-import { useTheme, type ThemePref } from '@/lib/theme';
-import { useSessionActions, useUser } from '@/auth/session';
-import { useOverview, useReview } from '@/hooks/queries';
-import { Count, ICON } from '@/components/rpa/common';
-import { EmergencyStop } from '@/components/rpa/emergency';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { formatClock, fmtTime, initials } from "@/lib/format";
+import { viewConversationsReason } from "@/lib/roles";
+import { useTheme, type ThemePref } from "@/lib/theme";
+import { useSessionActions, useUser } from "@/auth/session";
+import { useOverview, useReview } from "@/hooks/queries";
+import { Count, ICON } from "@/components/rpa/common";
+import { EmergencyStop } from "@/components/rpa/emergency";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,11 +53,17 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import markWhite from '@/assets/asiste-mark-white.png';
+} from "@/components/ui/dropdown-menu";
+import markWhite from "@/assets/asiste-mark-white.png";
 
 interface NavItem {
-  to: '/en-vivo' | '/robots' | '/agente' | '/trazabilidad' | '/usuarios' | '/auditoria';
+  to:
+    | "/en-vivo"
+    | "/robots"
+    | "/agente"
+    | "/trazabilidad"
+    | "/usuarios"
+    | "/auditoria";
   label: string;
   icon: LucideIcon;
   admin?: boolean;
@@ -56,12 +71,17 @@ interface NavItem {
   trace?: boolean;
 }
 const NAV: NavItem[] = [
-  { to: '/en-vivo', label: 'En vivo', icon: Activity },
-  { to: '/robots', label: 'Robots', icon: Bot },
-  { to: '/agente', label: 'Agente', icon: MessageSquareText },
-  { to: '/trazabilidad', label: 'Trazabilidad', icon: MessagesSquare, trace: true },
-  { to: '/usuarios', label: 'Usuarios', icon: Users, admin: true },
-  { to: '/auditoria', label: 'Auditoría', icon: ScrollText, admin: true },
+  { to: "/en-vivo", label: "En vivo", icon: Activity },
+  { to: "/robots", label: "Robots", icon: Bot },
+  { to: "/agente", label: "Agente", icon: MessageSquareText },
+  {
+    to: "/trazabilidad",
+    label: "Trazabilidad",
+    icon: MessagesSquare,
+    trace: true,
+  },
+  { to: "/usuarios", label: "Usuarios", icon: Users, admin: true },
+  { to: "/auditoria", label: "Auditoría", icon: ScrollText, admin: true },
 ];
 
 function LiveClock() {
@@ -80,9 +100,9 @@ function LiveClock() {
 }
 
 const THEME_ITEMS: { id: ThemePref; label: string; icon: LucideIcon }[] = [
-  { id: 'sistema', label: 'Automático (sistema)', icon: Monitor },
-  { id: 'claro', label: 'Claro', icon: Sun },
-  { id: 'oscuro', label: 'Oscuro', icon: Moon },
+  { id: "sistema", label: "Automático (sistema)", icon: Monitor },
+  { id: "claro", label: "Claro", icon: Sun },
+  { id: "oscuro", label: "Oscuro", icon: Moon },
 ];
 
 function UserMenu() {
@@ -107,8 +127,13 @@ function UserMenu() {
           <div className="text-xs text-ink-muted">Rol {me.role}</div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-xs font-medium text-ink-subtle">Tema</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={pref} onValueChange={(v) => setPref(v as ThemePref)}>
+        <DropdownMenuLabel className="text-xs font-medium text-ink-subtle">
+          Tema
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={pref}
+          onValueChange={(v) => setPref(v as ThemePref)}
+        >
           {THEME_ITEMS.map((t) => (
             <DropdownMenuRadioItem key={t.id} value={t.id}>
               <t.icon {...ICON} aria-hidden /> {t.label}
@@ -116,7 +141,9 @@ function UserMenu() {
           ))}
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => void navigate({ to: '/cuenta/contrasena' })}>
+        <DropdownMenuItem
+          onSelect={() => void navigate({ to: "/cuenta/contrasena" })}
+        >
           <KeyRound {...ICON} aria-hidden /> Cambiar contraseña
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void logout()}>
@@ -127,25 +154,39 @@ function UserMenu() {
   );
 }
 
-function TopNav({ stopped, unknown, attention }: { stopped: boolean; unknown: boolean; attention: number }) {
+function TopNav({
+  stopped,
+  unknown,
+  attention,
+}: {
+  stopped: boolean;
+  unknown: boolean;
+  attention: number;
+}) {
   const me = useUser();
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => setOpen(false), [path]);
-  const items = NAV.filter((n) => !n.admin || me.role === 'ADMIN');
+  const items = NAV.filter((n) => !n.admin || me.role === "ADMIN");
   const traceLocked = viewConversationsReason(me);
 
   return (
     <header
       className={cn(
-        'relative flex h-[60px] items-center gap-3.5 bg-navy px-6 text-navy-ink max-md:gap-2 max-md:px-3',
-        stopped && 'shadow-[inset_0_-3px_0_var(--danger-solid)]',
+        "relative flex h-[60px] items-center gap-3.5 bg-navy px-6 text-navy-ink max-md:gap-2 max-md:px-3",
+        stopped && "shadow-[inset_0_-3px_0_var(--danger-solid)]",
       )}
     >
-      <Link to="/en-vivo" className="flex shrink-0 items-center gap-2.5" aria-label="Asiste ING · Agente RPA · inicio">
+      <Link
+        to="/en-vivo"
+        className="flex shrink-0 items-center gap-2.5"
+        aria-label="Asiste ING · Agente RPA · inicio"
+      >
         <img src={markWhite} alt="" className="block h-auto w-[30px]" />
         <div className="leading-none whitespace-nowrap max-md:hidden">
-          <div className="font-display text-base leading-[18px] font-bold tracking-[.02em] text-on-navy">ASISTE ING</div>
+          <div className="font-display text-base leading-[18px] font-bold tracking-[.02em] text-on-navy">
+            ASISTE ING
+          </div>
           <div className="text-[11px] leading-[14px] font-medium tracking-[.04em] text-on-navy-muted max-xl:hidden">
             Agente RPA · Ventas
           </div>
@@ -155,19 +196,23 @@ function TopNav({ stopped, unknown, attention }: { stopped: boolean; unknown: bo
       <button
         type="button"
         className="grid size-9 cursor-pointer place-items-center rounded-sm text-navy-ink hover:bg-on-navy-soft hover:text-on-navy md:hidden"
-        aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+        aria-label={open ? "Cerrar menú" : "Abrir menú"}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        {open ? <X {...ICON} className="size-5" /> : <Menu {...ICON} className="size-5" />}
+        {open ? (
+          <X {...ICON} className="size-5" />
+        ) : (
+          <Menu {...ICON} className="size-5" />
+        )}
       </button>
 
       <nav
         aria-label="Principal"
         className={cn(
-          'flex h-full gap-1 max-md:hidden',
+          "flex h-full gap-1 max-md:hidden",
           open &&
-            'max-md:absolute max-md:inset-x-0 max-md:top-[60px] max-md:z-40 max-md:flex max-md:h-auto max-md:flex-col max-md:bg-navy max-md:p-2 max-md:shadow-pop',
+            "max-md:absolute max-md:inset-x-0 max-md:top-[60px] max-md:z-40 max-md:flex max-md:h-auto max-md:flex-col max-md:bg-navy max-md:p-2 max-md:shadow-pop",
         )}
       >
         {items.map((n, i) => {
@@ -184,8 +229,14 @@ function TopNav({ stopped, unknown, attention }: { stopped: boolean; unknown: bo
                     className="flex h-full cursor-not-allowed items-center gap-2 px-2.5 text-[13.5px] leading-5 font-medium whitespace-nowrap text-navy-ink opacity-55 max-md:h-11"
                   >
                     <n.icon {...ICON} className="size-4 shrink-0" aria-hidden />
-                    <span className="max-xl:sr-only max-md:not-sr-only">{n.label}</span>
-                    <Lock {...ICON} className="size-3 shrink-0" aria-label="requiere rol ADMIN" />
+                    <span className="max-xl:sr-only max-md:not-sr-only">
+                      {n.label}
+                    </span>
+                    <Lock
+                      {...ICON}
+                      className="size-3 shrink-0"
+                      aria-label="requiere rol ADMIN"
+                    />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>{locked}</TooltipContent>
@@ -198,8 +249,10 @@ function TopNav({ stopped, unknown, attention }: { stopped: boolean; unknown: bo
               className="ai-topnav-link flex h-full items-center gap-2 px-2.5 text-[13.5px] leading-5 font-medium whitespace-nowrap text-navy-ink hover:text-on-navy aria-[current=page]:font-semibold aria-[current=page]:text-on-navy max-md:h-11"
             >
               <n.icon {...ICON} className="size-4 shrink-0" aria-hidden />
-              <span className="max-xl:sr-only max-md:not-sr-only">{n.label}</span>
-              {n.to === '/en-vivo' && attention > 0 && (
+              <span className="max-xl:sr-only max-md:not-sr-only">
+                {n.label}
+              </span>
+              {n.to === "/en-vivo" && attention > 0 && (
                 <Count alert>
                   {attention}
                   <span className="sr-only"> pendientes de atención</span>
@@ -209,10 +262,17 @@ function TopNav({ stopped, unknown, attention }: { stopped: boolean; unknown: bo
           );
           return (
             <span key={n.to} className="contents">
-              {sep && <span className="mx-1.5 h-6 w-px self-center bg-on-navy-line max-md:my-1.5 max-md:h-px max-md:w-auto" aria-hidden />}
+              {sep && (
+                <span
+                  className="mx-1.5 h-6 w-px self-center bg-on-navy-line max-md:my-1.5 max-md:h-px max-md:w-auto"
+                  aria-hidden
+                />
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>{link}</TooltipTrigger>
-                <TooltipContent className="xl:hidden max-md:hidden">{n.label}</TooltipContent>
+                <TooltipContent className="xl:hidden max-md:hidden">
+                  {n.label}
+                </TooltipContent>
               </Tooltip>
             </span>
           );
@@ -223,8 +283,8 @@ function TopNav({ stopped, unknown, attention }: { stopped: boolean; unknown: bo
         <span
           role="status"
           className={cn(
-            'inline-flex h-8 items-center gap-2 rounded-full bg-on-navy-soft px-3 text-[12.5px] leading-4 font-semibold whitespace-nowrap text-on-navy',
-            stopped && 'bg-danger-solid',
+            "inline-flex h-8 items-center gap-2 rounded-full bg-on-navy-soft px-3 text-[12.5px] leading-4 font-semibold whitespace-nowrap text-on-navy",
+            stopped && "bg-danger-solid",
           )}
         >
           {stopped ? (
@@ -234,7 +294,13 @@ function TopNav({ stopped, unknown, attention }: { stopped: boolean; unknown: bo
           ) : (
             <span className="ai-live-dot" aria-hidden />
           )}
-          <span className="max-lg:sr-only">{stopped ? 'ROBOT DETENIDO' : unknown ? 'Estado desconocido' : 'Robot operando'}</span>
+          <span className="max-lg:sr-only">
+            {stopped
+              ? "ROBOT DETENIDO"
+              : unknown
+                ? "Estado desconocido"
+                : "Robot operando"}
+          </span>
         </span>
         <EmergencyStop stopped={stopped} role={me.role} onNavy />
         <LiveClock />
@@ -249,7 +315,10 @@ function TopNav({ stopped, unknown, attention }: { stopped: boolean; unknown: bo
               <Bell {...ICON} className="size-4" aria-hidden />
             </button>
           </TooltipTrigger>
-          <TooltipContent>Alertas: el servidor todavía no las expone al panel (llegan por Slack/Teams)</TooltipContent>
+          <TooltipContent>
+            Alertas: el servidor todavía no las expone al panel (llegan por
+            Slack/Teams)
+          </TooltipContent>
         </Tooltip>
         <UserMenu />
       </div>
@@ -263,8 +332,10 @@ export function AppShell() {
   const review = useReview();
   const stopped = overview.data?.killSwitch ?? false;
   const attention =
-    (review.data ? review.data.conversations.length + review.data.uncertainMessages.length : 0) +
-    (overview.data?.sessions.filter((s) => s.status === 'DOWN').length ?? 0);
+    (review.data
+      ? review.data.conversations.length + review.data.uncertainMessages.length
+      : 0) +
+    (overview.data?.sessions.filter((s) => s.status === "DOWN").length ?? 0);
 
   return (
     <div className="min-h-screen bg-surface-0">
@@ -274,7 +345,11 @@ export function AppShell() {
       >
         Saltar al contenido
       </a>
-      <TopNav stopped={stopped} unknown={!overview.data} attention={attention} />
+      <TopNav
+        stopped={stopped}
+        unknown={!overview.data}
+        attention={attention}
+      />
       {stopped && (
         <div
           role="alert"
@@ -282,13 +357,34 @@ export function AppShell() {
         >
           <Power {...ICON} className="size-4 shrink-0" aria-hidden />
           <span className="min-w-0 flex-1">
-            Robot detenido. No se envía nada a los clientes; la lectura continúa.
-            {overview.data && <span className="font-medium"> Estado confirmado {fmtTime(overview.data.generatedAt, true)}.</span>}
+            {overview.data?.killSwitchReason?.cause === "LLM_OUTAGE" ? (
+              <>
+                Robots pausados automáticamente{" "}
+                {fmtTime(overview.data.killSwitchReason.at, true)}: el modelo de
+                IA no responde (
+                <span className="font-mono">
+                  {overview.data.killSwitchReason.detail}
+                </span>
+                ). Revisa la cuota o la API key y reanuda; los mensajes que
+                llegaron mientras tanto se responden al reanudar.
+              </>
+            ) : (
+              "Robot detenido. No se envía nada a los clientes; la lectura continúa."
+            )}
+            {overview.data && (
+              <span className="font-medium">
+                {" "}
+                Estado confirmado {fmtTime(overview.data.generatedAt, true)}.
+              </span>
+            )}
           </span>
           <EmergencyStop stopped role={me.role} />
         </div>
       )}
-      <main id="contenido" className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-8 py-6 max-md:px-4 max-md:py-4">
+      <main
+        id="contenido"
+        className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-8 py-6 max-md:px-4 max-md:py-4"
+      >
         <Outlet />
       </main>
     </div>

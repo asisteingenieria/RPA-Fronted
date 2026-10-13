@@ -52,10 +52,12 @@ export const USE_LABEL: Record<string, string> = {
   CATALOG: 'Catálogo',
   FULL_CONTEXT: 'Contexto completo',
   SEARCH: 'Búsqueda',
+  IMAGE: 'Imagen de planes',
 };
 export const USE_HELP: Record<string, string> = {
   CATALOG: 'Planes desde Excel o CSV. Se guardan como registros; el agente los consulta por proceso y los precios salen literales.',
   FULL_CONTEXT: 'Texto corto que va completo en cada turno (horarios, políticas breves).',
   SEARCH: 'Documentos largos (preguntas frecuentes, políticas): en cada turno se envían solo los fragmentos más relevantes.',
+  IMAGE: 'Imagen con las tarjetas de los planes que el agente envía al cliente al ofrecer. Si el Brain tiene Excel, cada plan de la imagen (GB y precio) debe estar igual en él; sin Excel, los planes salen de lo leído en las imágenes.',
 };
 export const KIND_LABEL: Record<string, string> = { FILE: 'Archivo', TEXT: 'Texto', WEB: 'Página web' };

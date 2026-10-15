@@ -263,7 +263,14 @@ export type TemplateRole =
   | "CONFIRMAR_AUTORIZACION"
   | "AUTORIZACION_POR_ESCRITO"
   | "NOTA_DE_VOZ_ILEGIBLE"
-  | "DATOS_FALTANTES";
+  | "DATOS_FALTANTES"
+  // D-021: eligió cambiarse de operador pero ya es pospago del operador propio.
+  | "YA_POSPAGO"
+  // D-023: consulta de una portabilidad ya solicitada.
+  | "PORTABILIDAD_CONFIRMACION"
+  | "PORTABILIDAD_CONFIRMADA"
+  | "PORTABILIDAD_VALIDAR"
+  | "PORTABILIDAD_TRANSFERENCIA";
 
 /** D-015: flujo de la conversación (listas cerradas; lo aplica la máquina de estados). */
 export type FlowProcess = "PORTABILIDAD" | "MIGRACION" | "LINEA_NUEVA";
@@ -273,8 +280,21 @@ export type ProfileField = "currentOperator" | "usage";
 export type OutOfScopeStage = "MENU" | "PERFIL" | "OFERTA" | "OBJECIONES";
 export type OutOfScopeAction = "SOPORTE" | "ESCALAR";
 export type ImageOrder = "PROPIAS_PRIMERO" | "PRECIO" | "CARGA";
-export type SharedImageMode = "CON_LAS_DEMAS" | "SI_PIDE_PLATAFORMA";
+export type SharedImageMode = "CON_LAS_DEMAS" | "SI_PIDE_PLATAFORMA" | "SI_USO_LABORAL";
 export type SaleDataField = "DOCUMENTO" | "NOMBRE" | "CORREO" | "CELULAR";
+export type OwnPostpaidAction = "YA_POSPAGO" | "SEGUIR";
+
+/** D-021: el código corrige el proceso con el operador y el tipo de línea del cliente. */
+export interface OperatorRouting {
+  /** Nombres del operador propio (p. ej. «Claro»). Vacío = no se corrige. */
+  ownNames: string[];
+  /** Portabilidad + línea propia prepago → este proceso (null = no cambia). */
+  ownPrepaidTo: FlowProcess | null;
+  /** Portabilidad + línea propia pospago. */
+  ownPostpaid: OwnPostpaidAction;
+  /** Migración + línea de otro operador → este proceso (null = no cambia). */
+  otherOperatorTo: FlowProcess | null;
+}
 
 export interface AgentFlow {
   menu: { letter: MenuLetter; text: string; action: MenuAction }[];
@@ -292,7 +312,19 @@ export interface AgentFlow {
   saleData: SaleDataField[];
   /** Segundos que el robot espera en silencio a que el cliente termine de mandar sus datos. */
   saleDataWaitSeconds: number;
+  /** D-021 (servidores anteriores no lo envían). */
+  operatorRouting?: OperatorRouting;
+  /** D-022: el cliente pide una plataforma de video puntual (WIN, Disney+, Netflix). */
+  platformRequest?: PlatformRequestMode;
+  /** D-023: el cliente pregunta por una portabilidad que ya solicitó. */
+  portabilityInquiry?: PortabilityInquiryMode;
+  /** D-024: palabras con las que el sistema reconoce que el cliente usará el plan para el trabajo. */
+  workUsageWords?: string[];
 }
+
+export type PortabilityInquiryMode = "VALIDAR" | "SOPORTE";
+
+export type PlatformRequestMode = "OFRECER_DIRECTO" | "PERFILAR";
 
 export interface AgentTemplate {
   id: string;
@@ -947,6 +979,12 @@ export interface ConversationDetail extends ConversationListItem {
     backofficeSummary: string | null;
     transferredAt: string | null;
     internalNoteOk: boolean;
+  } | null;
+  /** D-023: caso que pasó al backoffice sin ser una venta (servidores anteriores no lo envían). */
+  serviceCase?: {
+    kind: string;
+    backofficeSummary: string | null;
+    transferredAt: string | null;
   } | null;
   consent: {
     answer: string | null;

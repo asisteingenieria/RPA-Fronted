@@ -276,6 +276,8 @@ export type TemplateRole =
   | "DATOS_FALTANTES"
   // D-021: eligió cambiarse de operador pero ya es pospago del operador propio.
   | "YA_POSPAGO"
+  // D-029: texto de cada imagen después de la primera (ySocial exige texto).
+  | "PIE_IMAGEN"
   // D-023: consulta de una portabilidad ya solicitada.
   | "PORTABILIDAD_CONFIRMACION"
   | "PORTABILIDAD_CONFIRMADA"

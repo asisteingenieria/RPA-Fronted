@@ -228,6 +228,16 @@ export interface EnrollmentCode {
   expiresAt: string;
 }
 
+/** D-026: horario de los robots (hora de Colombia). */
+export interface WorkHours {
+  /** "07:00-22:00" o null = trabajan siempre. */
+  hours: string | null;
+  /** PANEL = lo guardó un ADMIN; SERVIDOR = ROBOT_WORK_HOURS del servidor (valor inicial). */
+  source: "PANEL" | "SERVIDOR";
+  updatedBy: string | null;
+  updatedAt: string | null;
+}
+
 export interface RobotCredentials {
   abayaPassword?: string;
   mfaMode?: "none" | "totp";
@@ -1174,6 +1184,9 @@ export const api = {
     ),
 
   robots: (range: Range) => request<RobotList>(`/admin/robots?rango=${range}`),
+  workHours: () => request<WorkHours>("/admin/robots/work-hours"),
+  setWorkHours: (hours: string | null) =>
+    request<WorkHours>("/admin/robots/work-hours", send({ hours }, "PATCH")),
   robot: (robotUser: string, range: Range) =>
     request<RobotDetail>(`/admin/robots/${enc(robotUser)}?rango=${range}`),
   createRobot: (robotUser: string, creds: RobotCredentials) =>

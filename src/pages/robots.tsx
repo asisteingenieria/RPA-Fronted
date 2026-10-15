@@ -8,6 +8,7 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bot,
+  Clock,
   Download,
   Eye,
   KeyRound,
@@ -37,6 +38,7 @@ import {
   type RobotCredentials,
   type RobotListItem,
   type RobotStatus,
+  type WorkHours,
 } from '@/lib/api';
 import { fmtAgo, fmtDateTime, fmtMs, fmtPct, fmtTime, formatBytes, formatDate, formatInt } from '@/lib/format';
 import { actionLabel, CONV_LABEL, RANGE_LABEL, UPDATE_LABEL } from '@/lib/labels';
@@ -63,6 +65,7 @@ import { ChatLink, Typification, TypificationBar } from '@/components/rpa/trazab
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -231,6 +234,8 @@ export function RobotsPage() {
           </ActionButton>
         </div>
       </section>
+
+      <WorkHoursCard manage={manage} />
 
       <section className="min-w-0 rounded-lg border bg-surface-100 shadow-card">
         <div className="flex flex-wrap items-center gap-3 border-b p-4">
@@ -446,7 +451,9 @@ function RobotRow({
             </span>
             <span>
               <span className="block font-semibold text-ink hover:underline">{r.robotUser}</span>
-              <span className="block text-xs leading-4 text-ink-subtle">{r.host ?? 'sin instalar'}</span>
+              <span className="block text-xs leading-4 text-ink-subtle">
+                {r.host ?? (r.installed ? 'instalado, sin arrancar' : 'sin instalar')}
+              </span>
             </span>
           </button>
         </TableCell>
@@ -535,6 +542,105 @@ function RobotRow({
         </TableRow>
       )}
     </>
+  );
+}
+
+/* ───────────── Horario de los robots (D-026) ───────────── */
+function WorkHoursCard({ manage }: { manage: string | undefined }) {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: keys.workHours, queryFn: api.workHours });
+  const [editing, setEditing] = useState(false);
+  const [always, setAlways] = useState(false);
+  const [start, setStart] = useState('07:00');
+  const [end, setEnd] = useState('22:00');
+  const save = useMutation({
+    mutationFn: (hours: string | null) => api.setWorkHours(hours),
+    onSuccess: (wh) => {
+      qc.setQueryData(keys.workHours, wh);
+      setEditing(false);
+      toast.success('Horario guardado. Los robots lo toman en menos de un minuto.');
+    },
+    onError: (err: unknown) => toast.error(errorMessage(err, 'No se pudo guardar el horario.')),
+  });
+
+  const wh: WorkHours | undefined = q.data;
+  const [from, to] = wh?.hours?.split('-') ?? [];
+  const open = () => {
+    setAlways(!wh?.hours);
+    setStart(from ?? '07:00');
+    setEnd(to ?? '22:00');
+    setEditing(true);
+  };
+  const invalid = !always && (!start || !end || end <= start);
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (invalid) return;
+    save.mutate(always ? null : `${start}-${end}`);
+  };
+
+  return (
+    <Panel
+      title="Horario de los robots"
+      icon={Clock}
+      actions={
+        !editing && (
+          <ActionButton variant="secondary" size="sm" reason={manage} onClick={open} disabled={!wh}>
+            Cambiar horario
+          </ActionButton>
+        )
+      }
+    >
+      {q.isLoading ? (
+        <div className="text-sm text-ink-subtle">Cargando…</div>
+      ) : q.isError || !wh ? (
+        <div className="text-sm text-danger">No se pudo leer el horario.</div>
+      ) : editing ? (
+        <form onSubmit={submit} className="flex flex-wrap items-end gap-4">
+          <div className="flex items-center gap-2 self-center">
+            <Switch id="wh-always" checked={always} onCheckedChange={setAlways} />
+            <Label htmlFor="wh-always">Siempre (sin horario)</Label>
+          </div>
+          {!always && (
+            <>
+              <div className="grid gap-1.5">
+                <Label htmlFor="wh-start">Empieza</Label>
+                <Input id="wh-start" type="time" value={start} onChange={(e) => setStart(e.target.value)} className="w-32" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="wh-end">Termina</Label>
+                <Input id="wh-end" type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="w-32" />
+              </div>
+            </>
+          )}
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={invalid || save.isPending}>
+              Guardar
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
+              Cancelar
+            </Button>
+          </div>
+          {invalid && <p className="w-full text-xs text-danger">La hora de fin debe ser posterior a la de inicio (el mismo día).</p>}
+          <p className="w-full text-xs text-ink-subtle">
+            Hora de Colombia, todos los días. Si el turno nuevo ya terminó, cada robot pasa a FinTurno, termina los chats que tiene
+            y cierra sesión; no abandona chats.
+          </p>
+        </form>
+      ) : (
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span className="font-display text-[18px] font-semibold tabular-nums">
+            {wh.hours ? `${from} a ${to}` : 'Siempre (sin horario)'}
+          </span>
+          {wh.hours && <span className="text-[13px] text-ink-muted">hora de Colombia, todos los días</span>}
+          <span className="w-full text-xs text-ink-subtle">
+            {wh.source === 'PANEL'
+              ? `Cambiado por ${wh.updatedBy ?? '—'}${wh.updatedAt ? ` el ${fmtDateTime(wh.updatedAt)}` : ''}.`
+              : 'Valor inicial del servidor (ROBOT_WORK_HOURS).'}{' '}
+            Fuera de horario los robots no abren Abaya; al terminar pasan a FinTurno, terminan sus chats y cierran sesión.
+          </span>
+        </div>
+      )}
+    </Panel>
   );
 }
 

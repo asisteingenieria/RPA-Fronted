@@ -15,6 +15,7 @@ export const keys = {
   robot: (robotUser: string, range: Range) =>
     ["robot", robotUser, range] as const,
   traces: (robotUser: string) => ["traces", robotUser] as const,
+  workHours: ["work-hours"] as const,
   agent: ["agent"] as const,
   agentVersions: ["agent-versions"] as const,
 };

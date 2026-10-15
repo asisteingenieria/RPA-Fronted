@@ -38,6 +38,7 @@ export const ROLE_LABEL: Record<TemplateRole, string> = {
   NOTA_DE_VOZ_ILEGIBLE: 'Nota de voz ilegible',
   DATOS_FALTANTES: 'Datos que faltan',
   YA_POSPAGO: 'Ya es pospago',
+  PIE_IMAGEN: 'Pie de imagen adicional',
   PORTABILIDAD_CONFIRMACION: '¿Recibiste la confirmación?',
   PORTABILIDAD_CONFIRMADA: 'Portabilidad: ya confirmada',
   PORTABILIDAD_VALIDAR: 'Portabilidad: validar',
@@ -62,6 +63,7 @@ export const SYSTEM_ROLES: readonly TemplateRole[] = [
   'NOTA_DE_VOZ_ILEGIBLE',
   'DATOS_FALTANTES',
   'YA_POSPAGO',
+  'PIE_IMAGEN',
   'PORTABILIDAD_CONFIRMACION',
   'PORTABILIDAD_CONFIRMADA',
   'PORTABILIDAD_VALIDAR',
@@ -93,6 +95,8 @@ const ROLE_HELP: Record<TemplateRole, string> = {
     'Tras el «SÍ», si aún faltan datos del cliente para pasar la venta (se eligen en «Flujo»). {datos_faltantes} dice cuáles: «tu nombre completo y tu correo electrónico».',
   YA_POSPAGO:
     'La envía el sistema si el cliente eligió cambiarse de operador pero ya tiene plan pospago con el operador propio (se elige en «Flujo»). La conversación vuelve al menú: si elige una opción sigue el flujo; si no, despedida.',
+  PIE_IMAGEN:
+    'La envía el sistema como texto de cada imagen de planes después de la primera del mismo turno: ySocial no deja enviar una imagen sin texto y cada mensaje lleva una sola imagen. Sin cifras.',
   PORTABILIDAD_CONFIRMACION:
     'La envía el sistema cuando el cliente pregunta en el menú por una portabilidad que ya solicitó. Su sí o su no decide qué sigue (se elige en «Flujo»).',
   PORTABILIDAD_CONFIRMADA:
@@ -125,6 +129,7 @@ const ROLE_TONE: Record<TemplateRole, string> = {
   NOTA_DE_VOZ_ILEGIBLE: 'bg-surface-200 text-ink',
   DATOS_FALTANTES: 'bg-surface-200 text-ink',
   YA_POSPAGO: 'bg-surface-200 text-ink',
+  PIE_IMAGEN: 'bg-surface-200 text-ink',
   PORTABILIDAD_CONFIRMACION: 'bg-surface-200 text-ink',
   PORTABILIDAD_CONFIRMADA: 'bg-surface-200 text-ink',
   PORTABILIDAD_VALIDAR: 'bg-surface-200 text-ink',

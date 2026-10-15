@@ -89,9 +89,9 @@ export const EVENT_INFO: Record<TraceEventKind, { label: (detail?: string) => st
   TRANSFER_REQUESTED: { label: () => 'Transferencia al backoffice pedida', tone: 'info' },
   TRANSFERRED: { label: () => 'Transferida al backoffice', tone: 'ok' },
   ESCALATED: { label: () => 'Escalada a un asesor humano', tone: 'warn' },
-  CLOSED_INACTIVE: { label: () => 'Cerrada por inactividad', tone: 'warn' },
-  CLOSED_SUPPORT: { label: () => 'Derivada a soporte (*611)', tone: 'info' },
-  CLOSED_NO_SALE: { label: () => 'Cerrada sin venta', tone: 'info' },
+  CLOSED_INACTIVE: { label: (d) => `Cerrada por inactividad${d ? ` · ${d}` : ''}`, tone: 'warn' },
+  CLOSED_SUPPORT: { label: (d) => `Derivada a soporte (*611)${d ? ` · ${d}` : ''}`, tone: 'info' },
+  CLOSED_NO_SALE: { label: (d) => `Cerrada sin venta${d ? ` · ${d}` : ''}`, tone: 'info' },
   SENT_TO_REVIEW: { label: (d) => `Pasó a revisión${d ? ` · ${d}` : ''}`, tone: 'warn' },
 };
 

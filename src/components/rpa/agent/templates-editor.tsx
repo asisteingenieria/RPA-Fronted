@@ -37,6 +37,11 @@ export const ROLE_LABEL: Record<TemplateRole, string> = {
   AUTORIZACION_POR_ESCRITO: 'Autorización por escrito',
   NOTA_DE_VOZ_ILEGIBLE: 'Nota de voz ilegible',
   DATOS_FALTANTES: 'Datos que faltan',
+  YA_POSPAGO: 'Ya es pospago',
+  PORTABILIDAD_CONFIRMACION: '¿Recibiste la confirmación?',
+  PORTABILIDAD_CONFIRMADA: 'Portabilidad: ya confirmada',
+  PORTABILIDAD_VALIDAR: 'Portabilidad: validar',
+  PORTABILIDAD_TRANSFERENCIA: 'Portabilidad: transferir',
 };
 
 /**
@@ -56,6 +61,11 @@ export const SYSTEM_ROLES: readonly TemplateRole[] = [
   'AUTORIZACION_POR_ESCRITO',
   'NOTA_DE_VOZ_ILEGIBLE',
   'DATOS_FALTANTES',
+  'YA_POSPAGO',
+  'PORTABILIDAD_CONFIRMACION',
+  'PORTABILIDAD_CONFIRMADA',
+  'PORTABILIDAD_VALIDAR',
+  'PORTABILIDAD_TRANSFERENCIA',
 ];
 const isSystem = (role: TemplateRole) => SYSTEM_ROLES.includes(role);
 
@@ -81,6 +91,16 @@ const ROLE_HELP: Record<TemplateRole, string> = {
   NOTA_DE_VOZ_ILEGIBLE: 'La envía el sistema si no pudo transcribir una nota de voz.',
   DATOS_FALTANTES:
     'Tras el «SÍ», si aún faltan datos del cliente para pasar la venta (se eligen en «Flujo»). {datos_faltantes} dice cuáles: «tu nombre completo y tu correo electrónico».',
+  YA_POSPAGO:
+    'La envía el sistema si el cliente eligió cambiarse de operador pero ya tiene plan pospago con el operador propio (se elige en «Flujo»). La conversación vuelve al menú: si elige una opción sigue el flujo; si no, despedida.',
+  PORTABILIDAD_CONFIRMACION:
+    'La envía el sistema cuando el cliente pregunta en el menú por una portabilidad que ya solicitó. Su sí o su no decide qué sigue (se elige en «Flujo»).',
+  PORTABILIDAD_CONFIRMADA:
+    'Si el cliente sí recibió la confirmación: se envía esta y después la de «Soporte» con los canales de atención.',
+  PORTABILIDAD_VALIDAR:
+    'Si el cliente no recibió la confirmación: le pide los datos para validarla. {datos_faltantes} dice cuáles (los de «Flujo → Datos para pasar la venta»).',
+  PORTABILIDAD_TRANSFERENCIA:
+    'Con los datos, la validación pasa al backoffice con «Finalizar» (no es una venta). Admite {nombre_cliente}.',
 };
 
 /** Tono de cada rol (siempre con su nombre al lado). */
@@ -104,6 +124,11 @@ const ROLE_TONE: Record<TemplateRole, string> = {
   AUTORIZACION_POR_ESCRITO: 'bg-surface-200 text-ink',
   NOTA_DE_VOZ_ILEGIBLE: 'bg-surface-200 text-ink',
   DATOS_FALTANTES: 'bg-surface-200 text-ink',
+  YA_POSPAGO: 'bg-surface-200 text-ink',
+  PORTABILIDAD_CONFIRMACION: 'bg-surface-200 text-ink',
+  PORTABILIDAD_CONFIRMADA: 'bg-surface-200 text-ink',
+  PORTABILIDAD_VALIDAR: 'bg-surface-200 text-ink',
+  PORTABILIDAD_TRANSFERENCIA: 'bg-surface-200 text-ink',
 };
 
 const ROLES = Object.keys(ROLE_LABEL) as TemplateRole[];

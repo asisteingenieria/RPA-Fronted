@@ -291,6 +291,26 @@ function Detail({ d }: { d: ConversationDetail }) {
               )}
             </Panel>
           )}
+          {d.serviceCase && (
+            <Panel
+              title={d.serviceCase.kind === 'VALIDACION_PORTABILIDAD' ? 'Validación de portabilidad' : 'Caso de servicio'}
+              icon={CheckCircle2}
+              badge={<Badge variant="neutral">{d.serviceCase.transferredAt ? 'Transferido' : 'Por transferir'}</Badge>}
+            >
+              <KV
+                rows={[
+                  ['Qué es', 'Pasa al backoffice con «Finalizar» para validar la solicitud; no es una venta.'],
+                  ['Transferencia', d.serviceCase.transferredAt ? fmtWhen(d.serviceCase.transferredAt) : null],
+                ]}
+              />
+              {d.serviceCase.backofficeSummary && (
+                <div className="mt-4">
+                  <div className="mb-1.5 text-[11px] leading-[14px] font-semibold tracking-[.06em] text-ink-subtle uppercase">Resumen para el backoffice</div>
+                  <p className="m-0 rounded-sm bg-surface-200 px-3 py-2 text-[13px] whitespace-pre-wrap text-ink">{d.serviceCase.backofficeSummary}</p>
+                </div>
+              )}
+            </Panel>
+          )}
           {d.consent && (
             <Panel
               title="Consentimiento"

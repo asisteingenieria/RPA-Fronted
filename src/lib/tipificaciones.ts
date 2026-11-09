@@ -63,7 +63,7 @@ export type Proceso = 'PORTABILIDAD' | 'MIGRACION' | 'LINEA_NUEVA';
 export const PROCESOS: Proceso[] = ['PORTABILIDAD', 'MIGRACION', 'LINEA_NUEVA'];
 export const PROCESO_LABEL: Record<Proceso, string> = { PORTABILIDAD: 'Portabilidad', MIGRACION: 'Migración', LINEA_NUEVA: 'Línea nueva' };
 
-/** Estado de cada envío del robot en Abaya (Message.status). */
+/** Estado de cada envío del robot en Avaya (Message.status). */
 export type DeliveryStatus = 'VERIFIED' | 'UNCERTAIN' | 'FAILED' | 'PENDING';
 export const DELIVERY_LABEL: Record<DeliveryStatus, string> = {
   VERIFIED: 'Verificado',

@@ -1,5 +1,5 @@
 /**
- * Robots (kit: reference/screens/robots.*.png). Un robot = un usuario de Abaya = un equipo.
+ * Robots (kit: reference/screens/robots.*.png). Un robot = un usuario de Avaya = un equipo.
  * Datos: /admin/robots*, descarga del instalador y de trazas. Gestión solo ADMIN (OPERADOR ve los
  * controles deshabilitados con el motivo).
  */
@@ -303,7 +303,7 @@ export function RobotsPage() {
               </ActionButton>
             }
           >
-            Agrega el usuario robot de Abaya y genera un código para instalarlo en su equipo.
+            Agrega el usuario robot de Avaya y genera un código para instalarlo en su equipo.
           </Empty>
         ) : (
           <Table className="[&_td]:px-2.5 [&_td:first-child]:pl-4 [&_th]:px-2.5 [&_th:first-child]:pl-4">
@@ -314,7 +314,7 @@ export function RobotsPage() {
                 <TableHead>Última señal</TableHead>
                 <TableHead>Versión</TableHead>
                 <TableHead title="Chats en su bandeja / tope por robot">Chats</TableHead>
-                <TableHead title="Desde que el cliente escribe hasta que Abaya confirma la respuesta (95 % de las respuestas)">Resp. p95</TableHead>
+                <TableHead title="Desde que el cliente escribe hasta que Avaya confirma la respuesta (95 % de las respuestas)">Resp. p95</TableHead>
                 <TableHead className="text-right">Conv.</TableHead>
                 <TableHead className="text-right">Ventas</TableHead>
                 <TableHead className="text-right">Conversión</TableHead>
@@ -501,7 +501,7 @@ function RobotRow({
         <TableCell>
           <div className="inline-flex gap-0.5">
             <IconAction icon={r.paused ? Play : Pause} label={r.paused ? 'Reanudar robot' : 'Pausar robot'} reason={manage ?? off} onClick={onPause} />
-            <IconAction icon={KeyRound} label="Credenciales de Abaya" reason={manage} onClick={onCredentials} />
+            <IconAction icon={KeyRound} label="Credenciales de Avaya" reason={manage} onClick={onCredentials} />
             <IconAction icon={Eye} label="Ver detalle" onClick={onOpen} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -537,7 +537,7 @@ function RobotRow({
         <TableRow className="hover:!bg-warning-soft">
           <TableCell colSpan={11} className="bg-warning-soft whitespace-normal text-warning">
             Se intentó abrir este mismo robot en <strong>{r.lastRejectedHost}</strong> ({fmtTime(r.lastRejectedAt)}) mientras estaba en línea en{' '}
-            {r.host ?? 'otro equipo'}. Se rechazó: un usuario de Abaya solo puede correr en un equipo a la vez.
+            {r.host ?? 'otro equipo'}. Se rechazó: un usuario de Avaya solo puede correr en un equipo a la vez.
           </TableCell>
         </TableRow>
       )}
@@ -636,7 +636,7 @@ function WorkHoursCard({ manage }: { manage: string | undefined }) {
             {wh.source === 'PANEL'
               ? `Cambiado por ${wh.updatedBy ?? '—'}${wh.updatedAt ? ` el ${fmtDateTime(wh.updatedAt)}` : ''}.`
               : 'Valor inicial del servidor (ROBOT_WORK_HOURS).'}{' '}
-            Fuera de horario los robots no abren Abaya; al terminar pasan a FinTurno, terminan sus chats y cierran sesión.
+            Fuera de horario los robots no abren Avaya; al terminar pasan a FinTurno, terminan sus chats y cierran sesión.
           </span>
         </div>
       )}
@@ -652,7 +652,7 @@ function InstallCard({ code, onClose }: { code: EnrollmentCode; onClose: () => v
         <OneTimeSecret
           title="Código de instalación"
           value={code.enrollmentCode}
-          help={`Sirve una sola vez y vence ${fmtDateTime(code.expiresAt)}. No contiene la contraseña de Abaya.`}
+          help={`Sirve una sola vez y vence ${fmtDateTime(code.expiresAt)}. No contiene la contraseña de Avaya.`}
         />
         <ol className="m-0 flex list-decimal flex-col gap-2.5 pl-5 text-[13.5px] text-ink">
           <li>
@@ -709,10 +709,10 @@ function CredentialFields({
 }) {
   return (
     <div className="grid grid-cols-2 gap-x-5 gap-y-4 max-sm:grid-cols-1">
-      <FormField id="robot-user" label="Usuario de Abaya" help={editing ? undefined : 'Usuario dedicado y nominal, p. ej. robot-ventas-01'}>
+      <FormField id="robot-user" label="Usuario de Avaya" help={editing ? undefined : 'Usuario dedicado y nominal, p. ej. robot-ventas-01'}>
         <Input id="robot-user" value={user} onChange={(e) => setUser(e.target.value)} disabled={editing} autoComplete="off" required placeholder="robot-ventas-01" />
       </FormField>
-      <FormField id="robot-pass" label={editing ? 'Nueva contraseña (opcional)' : 'Contraseña de Abaya'}>
+      <FormField id="robot-pass" label={editing ? 'Nueva contraseña (opcional)' : 'Contraseña de Avaya'}>
         <Input id="robot-pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required={!editing} />
       </FormField>
       <FormField id="robot-mfa" label="MFA">
@@ -765,10 +765,10 @@ function AddRobotDialog({ open, onOpenChange, onCreated }: { open: boolean; onOp
           <DialogHeader className="px-6 pt-6 pb-4 text-left">
             <DialogTitle className="font-display text-lg font-semibold">Agregar robot</DialogTitle>
             <DialogDescription className="text-[13px] text-ink-muted">
-              Credenciales del usuario robot en Abaya. Se guardan cifradas en el servidor y nunca se vuelven a mostrar.
+              Credenciales del usuario robot en Avaya. Se guardan cifradas en el servidor y nunca se vuelven a mostrar.
             </DialogDescription>
             <ol className="mt-3 flex gap-2 text-xs font-medium text-ink-subtle" aria-label="Pasos">
-              <li className="flex flex-1 flex-col gap-2 font-semibold text-ink before:h-1 before:rounded before:bg-primary">1. Datos de Abaya</li>
+              <li className="flex flex-1 flex-col gap-2 font-semibold text-ink before:h-1 before:rounded before:bg-primary">1. Datos de Avaya</li>
               <li className="flex flex-1 flex-col gap-2 before:h-1 before:rounded before:bg-surface-200">2. Instalar en el equipo</li>
             </ol>
           </DialogHeader>
@@ -904,7 +904,7 @@ function RobotDetailSheet({ robotUser, range, onRange, onClose }: { robotUser: s
                   <Fact label="Apagado">{fmtDateTime(r.stoppedAt)}</Fact>
                   <Fact label="Instalado">{r.installed ? fmtDateTime(r.enrolledAt) : 'No (modo .env o pendiente)'}</Fact>
                   <Fact label="MFA">{r.mfaMode === 'totp' ? 'TOTP' : 'Sin MFA'}</Fact>
-                  <Fact label="Sesión en Abaya">
+                  <Fact label="Sesión en Avaya">
                     {d.session ? (
                       <span className="inline-flex flex-wrap items-center gap-2">
                         <SessionState status={d.session.status} />
@@ -1007,7 +1007,7 @@ function RobotDetailSheet({ robotUser, range, onRange, onClose }: { robotUser: s
               <Panel title="Trazas de error · últimos 7 días" flush>
                 {!admin ? (
                   <div className="p-5">
-                    <Callout tone="info">Requiere rol ADMIN: las trazas contienen pantallas de Abaya con datos de clientes.</Callout>
+                    <Callout tone="info">Requiere rol ADMIN: las trazas contienen pantallas de Avaya con datos de clientes.</Callout>
                   </div>
                 ) : traces.isLoading ? (
                   <SkeletonRows rows={2} cols={3} />

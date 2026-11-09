@@ -1,7 +1,8 @@
 /**
  * En vivo (inicio de ambos roles; kit: reference/screens/envivo.*.png).
  * Datos: /admin/overview, /admin/review, /admin/robots?rango=hoy, /admin/agent, /admin/sessions/:robot/reset.
- * Sin contenido de mensajes: solo estados, conteos, ids y tiempos.
+ * Sin contenido de mensajes: solo estados, conteos, ids y tiempos. Excepción: el «Monitor en vivo»
+ * (RobotRPA D-032, /admin/live por SSE), solo ADMIN, con los chats en tiempo real y la pantalla.
  */
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
@@ -26,13 +27,14 @@ import { cn } from '@/lib/utils';
 import { api, errorMessage } from '@/lib/api';
 import { fmtAgo, fmtTime, formatInt, formatPct } from '@/lib/format';
 import { actionLabel } from '@/lib/labels';
-import { reasonFor } from '@/lib/roles';
+import { liveMonitorReason, reasonFor } from '@/lib/roles';
 import { useUser } from '@/auth/session';
 import { keys, useNow, useOverview, useReview, useRobots } from '@/hooks/queries';
 import { ActionButton, Callout, Count, Empty, ErrorState, ICON, Kpi, LiveIndicator, PageHead, Panel, SkeletonCard, SkeletonRows } from '@/components/rpa/common';
 import { ChatLink } from '@/components/rpa/trazabilidad/parts';
 import { ActionResult, SessionState } from '@/components/rpa/status';
 import { EmergencyStop } from '@/components/rpa/emergency';
+import { LiveMonitor } from '@/components/rpa/live/monitor';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type Tone = 'danger' | 'warning' | 'info';
@@ -174,7 +176,7 @@ export function EnVivoPage() {
           Envío incierto · chat <ChatLink chatId={m.conversation.abayaChatId} />
         </>
       ),
-      sub: `${m.conversation.robotUser} · ${m.attempts} ${m.attempts === 1 ? 'intento' : 'intentos'} · no se reintenta solo: verifica en Abaya si llegó`,
+      sub: `${m.conversation.robotUser} · ${m.attempts} ${m.attempts === 1 ? 'intento' : 'intentos'} · no se reintenta solo: verifica en Avaya si llegó`,
       action: <RobotLink robot={m.conversation.robotUser} />,
     });
   }
@@ -203,7 +205,7 @@ export function EnVivoPage() {
     <>
       <PageHead
         title="Operación en vivo"
-        sub="Campaña Claro Móvil por WhatsApp · Abaya"
+        sub="Campaña Claro Móvil por WhatsApp · Avaya"
         actions={
           <>
             {o && <LiveIndicator text={`En vivo · actualizado ${fmtAgo(o.generatedAt, now)}`} />}
@@ -283,6 +285,8 @@ export function EnVivoPage() {
           />
         </div>
       )}
+
+      <LiveMonitor locked={liveMonitorReason(me)} />
 
       <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-5 max-xl:grid-cols-1">
         <Panel title="Requiere atención" icon={AlertTriangle} badge={<Count>{items.length}</Count>} flush>

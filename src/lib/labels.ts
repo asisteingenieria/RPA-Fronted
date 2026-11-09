@@ -61,3 +61,18 @@ export const USE_HELP: Record<string, string> = {
   IMAGE: 'Imagen con las tarjetas de los planes que el agente envía al cliente al ofrecer. Si el Brain tiene Excel, cada plan de la imagen (GB y precio) debe estar igual en él; sin Excel, los planes salen de lo leído en las imágenes.',
 };
 export const KIND_LABEL: Record<string, string> = { FILE: 'Archivo', TEXT: 'Texto', WEB: 'Página web' };
+
+/** D-035: sentimiento del cliente (solo medición). */
+export const SENTIMENT_LABEL: Record<string, string> = {
+  POSITIVO: 'Positivo',
+  NEUTRO: 'Neutro',
+  NEGATIVO: 'Negativo',
+  MOLESTO: 'Molesto',
+};
+
+/** «Negativo · el peor: Molesto» (el peor solo si es distinto del último). */
+export function sentimentText(last: string | null, worst: string | null): string | null {
+  if (!last) return null;
+  const l = SENTIMENT_LABEL[last] ?? last;
+  return worst && worst !== last ? `${l} · el peor: ${SENTIMENT_LABEL[worst] ?? worst}` : l;
+}

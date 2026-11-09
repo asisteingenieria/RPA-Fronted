@@ -167,7 +167,7 @@ const DELIVERY_UI: Record<DeliveryStatus, { cls: string; icon: LucideIcon }> = {
   PENDING: { cls: 'bg-surface-200 text-ink-muted', icon: Clock },
 };
 
-/** Estado de un envío del robot en Abaya + intentos + tiempo de respuesta. */
+/** Estado de un envío del robot en Avaya + intentos + tiempo de respuesta. */
 export function DeliveryState({ status, attempts = 1, responseMs }: { status: DeliveryStatus; attempts?: number; responseMs?: number | null }) {
   const d = DELIVERY_UI[status];
   return (
@@ -178,7 +178,7 @@ export function DeliveryState({ status, attempts = 1, responseMs }: { status: De
       {responseMs != null && (
         <span
           className="ml-1.5 inline-flex items-center gap-[3px] border-l border-current pl-1.5 tabular-nums"
-          title="Desde que llegó el mensaje del cliente hasta que Abaya confirmó el envío"
+          title="Desde que llegó el mensaje del cliente hasta que Avaya confirmó el envío"
         >
           <Timer {...ICON} className="size-3" aria-hidden />
           {formatDuration(responseMs)}
@@ -188,7 +188,7 @@ export function DeliveryState({ status, attempts = 1, responseMs }: { status: De
   );
 }
 
-/** Id del chat de Abaya (monoespaciado) con Copiar. */
+/** Id del chat de Avaya (monoespaciado) con Copiar. */
 export function ChatId({ id, className }: { id: string; className?: string }) {
   const [ok, setOk] = useState(false);
   const copy = async () => {

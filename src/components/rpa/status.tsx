@@ -46,8 +46,8 @@ export function VersionStatus({ status }: { status: AgentStatus }) {
 
 /* Robot por equipo (/admin/robots) */
 export const ROBOT_STATUS: Record<RobotStatus, [Tone, string, string]> = {
-  EN_LINEA: ['success', 'En línea', 'Trabajando y con sesión en Abaya.'],
-  RECONECTANDO: ['warning', 'Reconectando', 'Volviendo a iniciar sesión en Abaya.'],
+  EN_LINEA: ['success', 'En línea', 'Trabajando y con sesión en Avaya.'],
+  RECONECTANDO: ['warning', 'Reconectando', 'Volviendo a iniciar sesión en Avaya.'],
   CAIDO: ['danger', 'Caído', 'Falló 3 logins seguidos y dejó de intentar. Revisa las credenciales y habilita el reintento.'],
   SIN_SENAL: ['danger', 'Sin señal', 'El equipo no reporta hace más de 1 minuto: apagado sin aviso, sin red o colgado.'],
   APAGADO: ['neutral', 'Apagado', 'Se apagó en orden o nunca arrancó.'],
@@ -58,7 +58,7 @@ export function RobotState({ status }: { status: RobotStatus }) {
   return <Status tone={tone} label={label} title={help} dot={status !== 'DESHABILITADO'} />;
 }
 
-/* Sesión de Abaya: nombre en español + código */
+/* Sesión de Avaya: nombre en español + código */
 const SESSION: Record<string, [Tone, string]> = {
   ACTIVE: ['success', 'Activa'],
   RELOGGING: ['warning', 'Reingresando'],

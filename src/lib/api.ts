@@ -293,7 +293,9 @@ export type OutOfScopeStage = "MENU" | "PERFIL" | "OFERTA" | "OBJECIONES";
 export type OutOfScopeAction = "SOPORTE" | "ESCALAR";
 export type ImageOrder = "PROPIAS_PRIMERO" | "PRECIO" | "CARGA";
 export type SharedImageMode = "CON_LAS_DEMAS" | "SI_PIDE_PLATAFORMA" | "SI_USO_LABORAL";
-export type SaleDataField = "DOCUMENTO" | "NOMBRE" | "CORREO" | "CELULAR";
+export type SaleDataField = "DOCUMENTO" | "NOMBRE" | "CORREO" | "CELULAR" | "CIUDAD";
+/** D-033: saludo con el menú de letras o solo el saludo (el cliente escribe libre). */
+export type OpeningMode = "MENU_LETRAS" | "SIN_MENU";
 export type OwnPostpaidAction = "YA_POSPAGO" | "SEGUIR";
 
 /** D-021: el código corrige el proceso con el operador y el tipo de línea del cliente. */
@@ -332,6 +334,12 @@ export interface AgentFlow {
   portabilityInquiry?: PortabilityInquiryMode;
   /** D-024: palabras con las que el sistema reconoce que el cliente usará el plan para el trabajo. */
   workUsageWords?: string[];
+  /** D-033 (servidores anteriores no lo envían): cómo empieza la conversación. */
+  opening?: OpeningMode;
+  /** D-033: rebates por objeción antes de cerrar sin venta (0 = sin tope). */
+  objectionRebates?: number;
+  /** D-034: mensaje al cliente al pasar al backoffice (por defecto, sí). */
+  transferMessage?: boolean;
 }
 
 export type PortabilityInquiryMode = "VALIDAR" | "SOPORTE";
@@ -548,7 +556,7 @@ export interface AgentTestResult {
   customerText?: string;
   /**
    * D-011: imágenes de planes que enviaría el agente, cada una después de `afterReply`
-   * mensajes de texto del turno. En Abaya el robot las pega con su texto (D-014, SEND_PLAN_IMAGES).
+   * mensajes de texto del turno. En Avaya el robot las pega con su texto (D-014, SEND_PLAN_IMAGES).
    */
   images?: AgentTestImage[];
 }
@@ -874,7 +882,7 @@ export interface ConversationFilters {
   pasoPorRevision?: boolean;
   /** D-004: versión del guion. */
   version?: number;
-  /** Id del chat de Abaya, nombre del cliente o texto de los mensajes (rango ≤ 30 días). */
+  /** Id del chat de Avaya, nombre del cliente o texto de los mensajes (rango ≤ 30 días). */
   q?: string;
   cursor?: string;
   limit?: number;
@@ -931,7 +939,7 @@ export interface TraceMessage {
   text: string;
   sentAt: string;
   delivery?: { status: DeliveryStatus; attempts: number };
-  /** Desde que llegó la ráfaga del cliente hasta que Abaya confirmó el envío. */
+  /** Desde que llegó la ráfaga del cliente hasta que Avaya confirmó el envío. */
   responseMs?: number | null;
   /** D-010: nota de voz del cliente; `text` es su transcripción. El audio no se guarda. */
   media?: TraceMedia | null;
@@ -984,6 +992,9 @@ export interface ConversationDetail extends ConversationListItem {
     name: string | null;
     currentOperator: string | null;
     declaredUse: string | null;
+    /** D-035: sentimiento del cliente (solo medición). */
+    sentiment: string | null;
+    sentimentWorst: string | null;
     process: Proceso | null;
   };
   sale: {
@@ -1426,7 +1437,7 @@ export const api = {
     request<RobotPerformanceResponse>(
       `/admin/conversations/stats?${conversationQuery(f)}`,
     ),
-  /** `ref` = id interno o id del chat de Abaya. Con filtros devuelve `nav` (anterior/siguiente). */
+  /** `ref` = id interno o id del chat de Avaya. Con filtros devuelve `nav` (anterior/siguiente). */
   conversation: (ref: string, f?: ConversationFilters) =>
     request<ConversationDetail>(
       `/admin/conversations/${enc(ref)}${f ? `?${conversationQuery(f)}` : ""}`,
@@ -1482,3 +1493,96 @@ export async function download(
   a.remove();
   setTimeout(() => URL.revokeObjectURL(href), 1_000);
 }
+
+/* ───── Monitor en vivo (D-032): /admin/live, solo ADMIN, por SSE ───── */
+
+export type RobotActivityKind =
+  | "IDLE"
+  | "SEND"
+  | "OPEN_CHAT"
+  | "TRANSFER"
+  | "CLOSE"
+  | "READ_INBOX"
+  | "AGENT_STATE"
+  | "MAINTENANCE";
+
+/** Lo que hace el robot ahora (lo informa el robot; vence a los 60 s sin noticias). */
+export interface RobotActivity {
+  action: RobotActivityKind;
+  abayaChatId: string | null;
+  since: string;
+  queued: number;
+}
+
+export interface LiveChatCard {
+  id: string;
+  abayaChatId: string;
+  customerName: string | null;
+  stage: string;
+  status: string;
+  process: Proceso | null;
+  closed: boolean;
+  createdAt: string;
+  updatedAt: string;
+  /** De quién es el turno según el último mensaje. */
+  turn: "ROBOT" | "CLIENTE" | null;
+  lastMessage: {
+    from: "bot" | "client";
+    text: string;
+    at: string;
+    delivery?: DeliveryStatus;
+    image?: boolean;
+    audio?: boolean;
+  } | null;
+  pendingSends: number;
+  uncertainSends: number;
+}
+
+export interface LiveRobot {
+  robotUser: string;
+  status: RobotStatus;
+  sessionStatus: string | null;
+  paused: boolean;
+  host: string | null;
+  activity: RobotActivity | null;
+  chats: LiveChatCard[];
+}
+
+export interface LiveBoard {
+  generatedAt: string;
+  robots: LiveRobot[];
+}
+
+export interface LiveChat {
+  id: string;
+  abayaChatId: string;
+  robotUser: string;
+  customerName: string | null;
+  currentOperator: string | null;
+  declaredUse: string | null;
+  process: Proceso | null;
+  stage: string;
+  status: string;
+  closed: boolean;
+  closeTag: string | null;
+  /** D-035: sentimiento del cliente (solo medición). */
+  sentiment: string | null;
+  sentimentWorst: string | null;
+  createdAt: string;
+  contentPurged: boolean;
+  messages: TraceMessage[];
+}
+
+/** Una imagen de la pantalla del robot (JPEG en base64; nunca se guarda). */
+export interface ScreenFrame {
+  jpeg: string;
+  width: number;
+  height: number;
+  at: string;
+}
+
+export const liveUrls = {
+  stream: (chatId?: string | null) =>
+    chatId ? `/admin/live/stream?chat=${enc(chatId)}` : "/admin/live/stream",
+  screen: (robotUser: string) => `/admin/live/robots/${enc(robotUser)}/screen`,
+};

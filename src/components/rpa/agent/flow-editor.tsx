@@ -10,6 +10,7 @@ import type {
   FlowProcess,
   ImageOrder,
   MenuAction,
+  OpeningMode,
   OperatorRouting,
   OutOfScopeAction,
   OutOfScopeStage,
@@ -64,7 +65,12 @@ const SALE_DATA: Record<SaleDataField, string> = {
   DOCUMENTO: 'Documento de identidad',
   NOMBRE: 'Nombre completo',
   CORREO: 'Correo electrónico',
-  CELULAR: 'Número celular',
+  CELULAR: 'Línea a activar (celular)',
+  CIUDAD: 'Ciudad',
+};
+const OPENING_LABEL: Record<OpeningMode, string> = {
+  MENU_LETRAS: 'Saludo con el menú de letras (A, B, C, D)',
+  SIN_MENU: 'Solo el saludo: el cliente escribe lo que necesita',
 };
 const NONE = '__ninguna__';
 /** D-021: lo de la campaña si el servidor aún no lo envía. */
@@ -433,6 +439,74 @@ export function FlowEditor({
       <span className="text-xs leading-4 text-ink-subtle">
         Qué imágenes van con cada proceso (y cuáles son compartidas) se elige al cargarlas en el Brain.
       </span>
+
+      <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+        <legend className="mb-1.5 text-[13px] font-semibold text-ink">Inicio de la conversación</legend>
+        <Select
+          value={flow.opening ?? 'MENU_LETRAS'}
+          disabled={readOnly}
+          onValueChange={(v) => onChange({ ...flow, opening: v as OpeningMode })}
+        >
+          <SelectTrigger aria-label="Inicio de la conversación" className="h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(OPENING_LABEL) as OpeningMode[]).map((m) => (
+              <SelectItem key={m} value={m}>
+                {OPENING_LABEL[m]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-xs leading-4 text-ink-subtle">
+          Sin menú, el robot envía solo el saludo (por ejemplo, pidiendo el nombre) y el cliente escribe libre: el modelo clasifica su
+          necesidad en las opciones del menú (que siguen definiendo a qué proceso lleva cada una) y el sistema decide el camino.
+        </span>
+      </fieldset>
+
+      <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+        <legend className="mb-1.5 text-[13px] font-semibold text-ink">Objeciones</legend>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="objection-rebates" className="text-xs text-ink-muted">
+            Intentos de rebate antes de cerrar
+          </Label>
+          <Input
+            id="objection-rebates"
+            type="number"
+            min={0}
+            max={10}
+            className="h-8 w-20 tabular-nums"
+            value={flow.objectionRebates ?? 0}
+            readOnly={readOnly}
+            onChange={(e) => onChange({ ...flow, objectionRebates: Number(e.target.value) })}
+          />
+        </div>
+        <span className="text-xs leading-4 text-ink-subtle">
+          Cuántas veces el agente responde una objeción o un «no me interesa» antes de despedirse sin venta (el blueprint pide 3); los cuenta el
+          sistema. Desde el primer intento, si el cliente deja de responder, el cierre se tipifica como no venta de su proceso (Portabilidad:
+          mejor oferta de otros operadores; Migración y Línea nueva: prefiere prepago) y no como abandono. 0 = sin tope: «no me interesa» en
+          objeciones cierra de una vez.
+        </span>
+      </fieldset>
+
+      <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+        <legend className="mb-1.5 text-[13px] font-semibold text-ink">Paso al backoffice</legend>
+        <div className="flex items-center gap-1.5">
+          <Checkbox
+            id="transfer-message"
+            checked={flow.transferMessage ?? true}
+            disabled={readOnly}
+            onCheckedChange={(c) => onChange({ ...flow, transferMessage: c === true })}
+          />
+          <Label htmlFor="transfer-message" className="text-xs text-ink-muted">
+            Avisar al cliente que se transfiere
+          </Label>
+        </div>
+        <span className="text-xs leading-4 text-ink-subtle">
+          Con los datos completos el robot da «Finalizar» en Avaya y la venta pasa a la cola de backoffice. Marcado, antes envía la plantilla
+          «Transferencia al backoffice» (y «Transferir la validación» en la consulta de portabilidad); sin marcar, finaliza sin decir nada.
+        </span>
+      </fieldset>
 
       <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
         <legend className="mb-1.5 text-[13px] font-semibold text-ink">Datos para pasar la venta</legend>

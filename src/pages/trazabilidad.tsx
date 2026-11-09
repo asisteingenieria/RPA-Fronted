@@ -272,7 +272,7 @@ const KpisSkeleton = () => (
 );
 
 /* ───── Lista ───── */
-const COLS = ['Inicio → fin', 'Robot', 'Chat de Abaya', 'Cliente', 'Tipificación', 'Etapa final', 'Proceso · plan', 'Guion', 'Mensajes', '1.ª resp. · duración', 'Alertas', ''];
+const COLS = ['Inicio → fin', 'Robot', 'Chat de Avaya', 'Cliente', 'Tipificación', 'Etapa final', 'Proceso · plan', 'Guion', 'Mensajes', '1.ª resp. · duración', 'Alertas', ''];
 
 function ConversationList({
   search,
@@ -336,7 +336,7 @@ function ConversationList({
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por chat de Abaya, cliente o texto del mensaje… (Enter)"
+            placeholder="Buscar por chat de Avaya, cliente o texto del mensaje… (Enter)"
             aria-label="Buscar conversaciones"
             className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-subtle"
           />

@@ -170,8 +170,8 @@ const keyOf = (f: AgentFields) => JSON.stringify(f);
  */
 const ENGINE_FUNCTIONS = [
   "Autorización determinista: solo un «SÍ» explícito y escrito es consentimiento; el texto legal queda con su hash.",
-  "Tras el «SÍ», pedir los datos y dar «Finalizar» en Abaya: la venta pasa a la cola de backoffice.",
-  "Cerrar el chat en Abaya: soporte, sin venta (con su etiqueta) o por inactividad tras la reactivación.",
+  "Tras el «SÍ», pedir los datos y dar «Finalizar» en Avaya: la venta pasa a la cola de backoffice.",
+  "Cerrar el chat en Avaya: soporte, sin venta (con su etiqueta) o por inactividad tras la reactivación.",
   "Aplicar el flujo configurado: letras del menú, datos por proceso, qué hacer con lo que no es de venta y orden de las imágenes.",
   "Precios, planes e imágenes solo del catálogo publicado; cada cifra del modelo se verifica.",
   "Validar cada respuesta: si falla, regenera una vez y luego envía la plantilla «Respuesta segura».",
@@ -266,7 +266,7 @@ export function AgentePage() {
     defaultSource: admin ? "editor" : "published",
     onIssues,
   });
-  // D-017: el robot abre la conversación de prueba (al cargar y al reiniciar), como en Abaya.
+  // D-017: el robot abre la conversación de prueba (al cargar y al reiniciar), como en Avaya.
   const openTest = test.open;
   const testEmpty = test.items.length === 0 && !test.error;
   useEffect(() => {
@@ -1090,7 +1090,7 @@ function ConfigTab({
               items={test.items}
               title={chatTitle}
               typing={test.sending}
-              sending={test.sending}
+              sending={test.sending || test.queued}
               lockedReason={endedReason(test)}
               onSend={(t) => void test.send(t, form)}
               onSendAudio={(audio, sec) =>
@@ -1236,7 +1236,7 @@ function TestTab({
         />
         <Callout tone="info" icon={Shield}>
           Simulación con el motor real: máquina de estados, catálogo y
-          validadores. No toca Abaya.
+          validadores. No toca Avaya.
         </Callout>
         {data.provider === "simulado" && (
           <Callout tone="warning">
@@ -1253,7 +1253,7 @@ function TestTab({
           items={test.items}
           title={chatTitle}
           typing={test.sending}
-          sending={test.sending}
+          sending={test.sending || test.queued}
           lockedReason={endedReason(test)}
           onSend={(t) => void test.send(t, form)}
           onSendAudio={(audio, sec) => void test.sendAudio(audio, sec, form)}

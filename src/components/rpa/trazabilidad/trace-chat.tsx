@@ -1,6 +1,6 @@
 /**
  * Chat de SOLO LECTURA de una conversación real (Trazabilidad → detalle, D-002). Mismo formato que
- * WhatsAppPreview y, bajo cada respuesta del robot, el estado del envío en Abaya, los intentos y el
+ * WhatsAppPreview y, bajo cada respuesta del robot, el estado del envío en Avaya, los intentos y el
  * tiempo de respuesta. Los eventos (plan ofrecido, consentimiento, transferencia…) se intercalan
  * por hora como pastillas.
  */

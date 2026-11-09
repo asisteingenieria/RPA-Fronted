@@ -64,6 +64,14 @@ export function viewConversationsReason(me: { role: Role }): string | undefined 
   return me.role === 'ADMIN' ? undefined : 'Requiere rol ADMIN: las conversaciones muestran mensajes reales y datos de clientes.';
 }
 
+/**
+ * Monitor en vivo (RobotRPA D-032): chats de cada robot en tiempo real y su pantalla. Solo ADMIN,
+ * igual que Trazabilidad; el OPERADOR lo ve bloqueado con este motivo.
+ */
+export function liveMonitorReason(me: { role: Role }): string | undefined {
+  return me.role === 'ADMIN' ? undefined : 'Requiere rol ADMIN: muestra mensajes reales, datos de clientes y la pantalla de los robots.';
+}
+
 /** Salvaguardas de Usuarios: nadie se desactiva ni se quita el rol, y siempre queda un ADMIN activo. */
 export function userGuard(opts: { isSelf: boolean; isLastActiveAdmin: boolean }): {
   canDeactivate: boolean;

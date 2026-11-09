@@ -103,7 +103,7 @@ interface Props {
 export function WhatsAppPreview({
   items,
   title,
-  subtitle = 'Simulación · no toca Abaya',
+  subtitle = 'Simulación · no toca Avaya',
   badge,
   typing,
   lockedReason,
@@ -284,11 +284,12 @@ function Composer({
   const [audioError, setAudioError] = useState<string | null>(null);
   const [blocked] = useState(() => (onSendAudio ? recordingBlockedReason() : null));
   const recording = startedAt !== null;
-  const busy = sending ? 'Espera la respuesta del agente' : null;
+  // D-034: se puede seguir escribiendo; la nota de voz espera la respuesta.
+  const busy = sending ? 'Espera la respuesta del agente para enviar una nota de voz' : null;
 
   useEffect(() => {
-    if (!sending && !recording) input.current?.focus({ preventScroll: true });
-  }, [sending, recording]);
+    if (!recording) input.current?.focus({ preventScroll: true });
+  }, [recording]);
 
   const finish = async () => {
     const r = recorder.current;
@@ -381,7 +382,7 @@ function Composer({
         className="flex items-center gap-2 px-2.5 py-2"
         onSubmit={(e) => {
           e.preventDefault();
-          if (text && onSend && !sending) {
+          if (text && onSend) {
             onSend(text);
             setDraft('');
           }
@@ -418,7 +419,7 @@ function Composer({
           onChange={(e) => setDraft(e.target.value)}
           placeholder={onSendAudio ? 'Escribe o graba como cliente…' : 'Escribe como cliente…'}
           aria-label="Mensaje del cliente de prueba"
-          disabled={!onSend || sending}
+          disabled={!onSend}
         />
         {onSendAudio && !text ? (
           <WaButton icon={Mic} label="Grabar nota de voz" primary reason={busy ?? blocked} onClick={() => void start()} />
@@ -427,7 +428,7 @@ function Composer({
             type="submit"
             className="grid size-[38px] shrink-0 cursor-pointer place-items-center rounded-full bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Enviar"
-            disabled={!onSend || sending || !text}
+            disabled={!onSend || !text}
           >
             <Send {...ICON} className="size-4" aria-hidden />
           </button>

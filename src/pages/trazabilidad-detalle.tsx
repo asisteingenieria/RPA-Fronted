@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 import { useUser } from '@/auth/session';
 import { ApiError, api, download, errorMessage, urls, type ConversationDetail } from '@/lib/api';
 import { fmtMs, formatCOP, formatInt, fmtWhen, formatTime } from '@/lib/format';
-import { actionLabel } from '@/lib/labels';
+import { actionLabel, sentimentText } from '@/lib/labels';
 import { viewConversationsReason } from '@/lib/roles';
 import { LLM_RESULT, PROCESO_LABEL } from '@/lib/tipificaciones';
 import { toFilters, type TraceSearch } from '@/lib/trace-search';
@@ -248,6 +248,7 @@ function Detail({ d }: { d: ConversationDetail }) {
                 ['Teléfono', <Missing key="tel" title="El robot no guarda el teléfono (solo un hash). Dato faltante." text="— no se guarda" />],
                 ['Operador actual', d.profile.currentOperator],
                 ['Uso declarado', d.profile.declaredUse],
+                ['Sentimiento', sentimentText(d.profile.sentiment, d.profile.sentimentWorst)],
                 ['Proceso', d.profile.process ? PROCESO_LABEL[d.profile.process] : null],
               ]}
             />
@@ -280,7 +281,7 @@ function Detail({ d }: { d: ConversationDetail }) {
                       </Badge>
                     ),
                   ],
-                  ['Después', <Missing key="d" title="Lo que pasa en el backoffice vive en Abaya. Dato faltante." text="— vive en Abaya (backoffice)" />],
+                  ['Después', <Missing key="d" title="Lo que pasa en el backoffice vive en Avaya. Dato faltante." text="— vive en Avaya (backoffice)" />],
                 ]}
               />
               {d.sale.backofficeSummary && (
@@ -414,7 +415,7 @@ function Detail({ d }: { d: ConversationDetail }) {
             faltante.
           </Callout>
         </div>
-        <Panel title="Acciones del robot en Abaya" icon={Bot} flush actions={<span className="text-xs text-ink-muted">RpaActionLog · {plural(d.rpaActions.length, 'acción', 'acciones')}</span>}>
+        <Panel title="Acciones del robot en Avaya" icon={Bot} flush actions={<span className="text-xs text-ink-muted">RpaActionLog · {plural(d.rpaActions.length, 'acción', 'acciones')}</span>}>
           <Table className="text-[13px]">
             <TableHeader>
               <TableRow>

@@ -168,7 +168,8 @@ function Detail({ d }: { d: ConversationDetail }) {
   const regenerations = d.llmCalls.filter((c) => c.result === 'REGENERATED' || c.result === 'SAFE_REPLY').length;
   // Un envío incierto aparece como acción del robot y como mensaje: se cuenta una vez.
   const uncertain = Math.max(
-    d.rpaActions.filter((a) => a.result === 'UNCERTAIN').length,
+    // Solo envíos: un cierre o una transferencia incierta no es un envío incierto.
+    d.rpaActions.filter((a) => a.action === 'SEND' && a.result === 'UNCERTAIN').length,
     d.messages.filter((m) => m.delivery?.status === 'UNCERTAIN').length,
   );
   const facts: [string, string][] = [

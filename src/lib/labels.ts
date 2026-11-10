@@ -22,6 +22,7 @@ export const CONV_LABEL: Record<string, string> = {
   CLOSED_SUPPORT: 'Soporte',
   CLOSED_INACTIVE: 'Inactividad',
   NEEDS_REVIEW: 'En revisión',
+  CLOSED_EXTERNALLY: 'Cerradas en Avaya',
 };
 
 export const RANGE_LABEL: Record<Range, string> = { hoy: 'Hoy', '7d': 'Últimos 7 días', '30d': 'Últimos 30 días' };

@@ -11,7 +11,9 @@ export type Tipificacion =
   | 'NEEDS_REVIEW'
   | 'ACTIVE'
   | 'WAITING_CONSENT'
-  | 'TRANSFERRING';
+  | 'TRANSFERRING'
+  /** D-037: ya no estaba en la bandeja del robot (la cerró o reasignó otro en Avaya). */
+  | 'CLOSED_EXTERNALLY';
 
 /** tone = variante de Badge; color = segmento de la barra apilada. */
 export type TipTone = 'success' | 'neutral' | 'tyt' | 'outline' | 'danger' | 'info' | 'warning';
@@ -31,6 +33,7 @@ export const TIPIFICACION: Record<Tipificacion, TipInfo> = {
   ACTIVE: { label: 'En curso', short: 'En curso', tone: 'info', color: 'var(--primary)' },
   WAITING_CONSENT: { label: 'Esperando autorización', short: 'Esperando autorización', tone: 'warning', color: 'var(--warning)' },
   TRANSFERRING: { label: 'Transfiriendo', short: 'Transfiriendo', tone: 'info', color: 'var(--brand-azure)' },
+  CLOSED_EXTERNALLY: { label: 'Cerrada en Avaya (fuera del robot)', short: 'Cerrada en Avaya', tone: 'outline', color: 'var(--border)' },
 };
 
 /** Orden fijo de leyendas, filtros y columnas. */
@@ -39,6 +42,7 @@ export const TIPIFICACION_ORDER: Tipificacion[] = [
   'CLOSED_NO_SALE',
   'CLOSED_SUPPORT',
   'CLOSED_INACTIVE',
+  'CLOSED_EXTERNALLY',
   'NEEDS_REVIEW',
   'ACTIVE',
   'WAITING_CONSENT',

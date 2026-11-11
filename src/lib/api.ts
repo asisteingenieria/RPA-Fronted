@@ -1437,6 +1437,12 @@ export const api = {
     request<RobotPerformanceResponse>(
       `/admin/conversations/stats?${conversationQuery(f)}`,
     ),
+  /** Revisión resuelta: NEEDS_REVIEW → «Cerrada en Avaya» (solo ADMIN, queda en Auditoría). */
+  resolveReview: (id: string) =>
+    request<{ id: string; status: "CLOSED_EXTERNALLY" }>(
+      `/admin/conversations/${enc(id)}/resolve-review`,
+      send({}),
+    ),
   /** `ref` = id interno o id del chat de Avaya. Con filtros devuelve `nav` (anterior/siguiente). */
   conversation: (ref: string, f?: ConversationFilters) =>
     request<ConversationDetail>(

@@ -25,8 +25,9 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { api, errorMessage } from '@/lib/api';
-import { fmtAgo, fmtTime, formatInt, formatPct } from '@/lib/format';
+import { fmtAgo, fmtDateTime, fmtTime, formatInt, formatPct } from '@/lib/format';
 import { actionLabel } from '@/lib/labels';
+import { duplicateStart } from '@/lib/presence';
 import { liveMonitorReason, reasonFor } from '@/lib/roles';
 import { useUser } from '@/auth/session';
 import { keys, useNow, useOverview, useReview, useRobots } from '@/hooks/queries';
@@ -142,14 +143,14 @@ export function EnVivoPage() {
         action: <RobotLink robot={r.robotUser} />,
       });
     }
-    if (r.lastRejectedAt && now - new Date(r.lastRejectedAt).getTime() < 24 * 3_600_000) {
+    if (duplicateStart(r, now)) {
       items.push({
         key: `dup-${r.robotUser}`,
         tone: 'warning',
         icon: Copy,
         priority: 4,
         title: `Arranque duplicado de ${r.robotUser}`,
-        sub: `Se intentó abrir en ${r.lastRejectedHost ?? 'otro equipo'} a las ${fmtTime(r.lastRejectedAt)} y se rechazó`,
+        sub: `Se intentó abrir en ${r.lastRejectedHost ?? 'otro equipo'} el ${fmtDateTime(r.lastRejectedAt)} y se rechazó`,
         action: <RobotLink robot={r.robotUser} />,
       });
     }

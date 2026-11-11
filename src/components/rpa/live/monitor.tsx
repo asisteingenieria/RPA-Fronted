@@ -70,7 +70,7 @@ export function LiveMonitor({ locked }: { locked?: string }) {
   }
 
   const b = live.board;
-  const openChats = b?.robots.reduce((n, r) => n + r.chats.filter((c) => !c.closed).length, 0) ?? 0;
+  const openChats = b?.robots.reduce((n, r) => n + r.chats.filter((c) => !c.closed && c.status !== 'NEEDS_REVIEW').length, 0) ?? 0;
 
   return (
     <>
@@ -131,8 +131,11 @@ function RobotCard({
   onOpenChat: (id: string) => void;
   onScreen: () => void;
 }) {
-  const open = r.chats.filter((c) => !c.closed);
+  // El servidor ya los manda ordenados (lo más reciente arriba en cada grupo). Los que esperan
+  // revisión humana ya no los atiende el robot: van aparte, al final.
+  const open = r.chats.filter((c) => !c.closed && c.status !== 'NEEDS_REVIEW');
   const closed = r.chats.filter((c) => c.closed);
+  const review = r.chats.filter((c) => c.status === 'NEEDS_REVIEW');
   const offline = r.status === 'APAGADO' || r.status === 'SIN_SENAL' || r.status === 'DESHABILITADO';
   return (
     <article className="flex min-w-0 flex-col rounded-md border bg-surface-0" aria-label={`Robot ${r.robotUser}`}>
@@ -167,6 +170,20 @@ function RobotCard({
             <ChatRow key={c.id} chat={c} now={now} working={r.activity?.abayaChatId === c.abayaChatId && r.activity.action !== 'IDLE'} onOpen={() => onOpenChat(c.id)} />
           ))}
         </ul>
+      )}
+      {review.length > 0 && (
+        <section aria-label={`En revisión de ${r.robotUser}`} className="border-t bg-surface-0">
+          <h3 className="m-0 flex flex-wrap items-center gap-x-2 px-4 pt-3 pb-1 text-xs font-semibold text-ink-muted">
+            <AlertTriangle {...ICON} className="size-3.5 text-warning" aria-hidden />
+            En revisión ({review.length})
+            <span className="font-normal text-ink-subtle">· el robot ya no los atiende; ciérralos en Trazabilidad con «Marcar como revisada»</span>
+          </h3>
+          <ul className="m-0 list-none p-0">
+            {review.map((c) => (
+              <ChatRow key={c.id} chat={c} now={now} working={false} onOpen={() => onOpenChat(c.id)} />
+            ))}
+          </ul>
+        </section>
       )}
     </article>
   );
@@ -205,7 +222,8 @@ const code = (c: string) => <span className="font-mono text-[10.5px] tracking-[.
 function ChatRow({ chat: c, now, working, onOpen }: { chat: LiveChatCard; now: number; working: boolean; onOpen: () => void }) {
   const m = c.lastMessage;
   const waitMs = m ? now - Date.parse(m.at) : 0;
-  const clientWaits = c.turn === 'ROBOT' && !c.closed;
+  const inReview = c.status === 'NEEDS_REVIEW';
+  const clientWaits = c.turn === 'ROBOT' && !c.closed && !inReview;
   return (
     <li className="border-b last:border-b-0">
       <button
@@ -213,7 +231,7 @@ function ChatRow({ chat: c, now, working, onOpen }: { chat: LiveChatCard; now: n
         onClick={onOpen}
         className={cn(
           'grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-4 py-3 text-left outline-none hover:bg-surface-200 focus-visible:ring-2 focus-visible:ring-ring',
-          c.closed && 'opacity-70',
+          (c.closed || inReview) && 'opacity-70',
         )}
         aria-label={`Ver en vivo el chat ${c.abayaChatId}`}
       >
@@ -223,7 +241,7 @@ function ChatRow({ chat: c, now, working, onOpen }: { chat: LiveChatCard; now: n
           {c.process && <span className="text-xs text-ink-muted">{PROCESO_LABEL[c.process]}</span>}
         </span>
         <span className="flex items-center gap-1.5 justify-self-end">
-          {c.closed ? (
+          {c.closed || inReview ? (
             <Status tone="neutral" label={`${CONV_LABEL[c.status] ?? c.status} · ${c.status}`} dot={false} />
           ) : (
             <span className="inline-flex h-[22px] items-center rounded-sm bg-surface-200 px-2 font-mono text-[10.5px] font-semibold tracking-[.05em] text-ink-muted">{c.stage}</span>
@@ -255,13 +273,14 @@ function ChatRow({ chat: c, now, working, onOpen }: { chat: LiveChatCard; now: n
               el robot está actuando aquí
             </span>
           )}
-          {!c.closed && m && (
+          {!c.closed && !inReview && m && (
             <span className={cn('inline-flex items-center gap-1', clientWaits && waitMs > WAIT_WARN_MS ? 'font-semibold text-warning' : 'text-ink-subtle')}>
               <Clock {...ICON} className="size-3.5" aria-hidden />
               {clientWaits ? `Cliente espera respuesta · ${fmtAgo(m.at, now).replace('hace ', '')}` : `Esperando al cliente · ${fmtAgo(m.at, now)}`}
             </span>
           )}
           {c.closed && <span className="text-ink-subtle">Cerrado {fmtAgo(c.updatedAt, now)}</span>}
+          {inReview && <span className="text-ink-subtle">Último mensaje {fmtAgo(m?.at ?? c.updatedAt, now)}</span>}
           {c.pendingSends > 0 && <span className="text-ink-muted">{c.pendingSends} por enviar</span>}
           {c.uncertainSends > 0 && (
             <span className="inline-flex items-center gap-1 font-semibold text-warning">

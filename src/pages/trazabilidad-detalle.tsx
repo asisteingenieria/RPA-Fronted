@@ -4,12 +4,13 @@
  * Datos: /admin/conversations/:id (con los filtros de la lista para anterior/siguiente).
  */
 import { useState, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import {
   Bot,
   Check,
   CheckCircle2,
+  ClipboardCheck,
   ChevronLeft,
   ChevronRight,
   Cpu,
@@ -36,6 +37,8 @@ import { ActionResult } from '@/components/rpa/status';
 import { ChatId, StageTrail, Typification } from '@/components/rpa/trazabilidad/parts';
 import { TraceChat } from '@/components/rpa/trazabilidad/trace-chat';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TraceNoAccess } from './trazabilidad';
@@ -57,6 +60,7 @@ export function TrazabilidadDetallePage() {
     refetchInterval: (query) => (query.state.data && !query.state.data.closed ? OPEN_REFRESH_MS : false),
   });
   const [downloading, setDownloading] = useState(false);
+  const [confirmReview, setConfirmReview] = useState(false);
   const d = q.data;
   const go = (target: string | null | undefined) =>
     target && void navigate({ to: '/trazabilidad/$id', params: { id: target }, search: (prev: TraceSearch) => prev });
@@ -95,6 +99,11 @@ export function TrazabilidadDetallePage() {
           )}
           <NavButton label="Conversación anterior" icon={ChevronLeft} disabled={!d?.nav?.prevId} onClick={() => go(d?.nav?.prevId)} />
           <NavButton label="Conversación siguiente" icon={ChevronRight} disabled={!d?.nav?.nextId} onClick={() => go(d?.nav?.nextId)} />
+          {d?.status === 'NEEDS_REVIEW' && (
+            <ActionButton variant="secondary" icon={ClipboardCheck} onClick={() => setConfirmReview(true)} title="Queda en Auditoría">
+              Marcar como revisada
+            </ActionButton>
+          )}
           <ActionButton
             variant="secondary"
             icon={Download}
@@ -121,7 +130,47 @@ export function TrazabilidadDetallePage() {
       ) : (
         <Detail d={d} />
       )}
+      {d && <ResolveReviewDialog open={confirmReview} onOpenChange={setConfirmReview} id={d.id} chatId={d.abayaChatId} />}
     </>
+  );
+}
+
+/**
+ * Cierra la revisión de una conversación que quedó NEEDS_REVIEW (envío, cierre o transferencia
+ * incierta) cuando ya se resolvió a mano en Avaya: pasa a «Cerrada en Avaya» y sale de En vivo.
+ */
+function ResolveReviewDialog({ open, onOpenChange, id, chatId }: { open: boolean; onOpenChange: (o: boolean) => void; id: string; chatId: string }) {
+  const qc = useQueryClient();
+  const resolve = useMutation({
+    mutationFn: () => api.resolveReview(id),
+    onSuccess: () => {
+      toast.success('Conversación revisada', { description: 'Quedó como «Cerrada en Avaya» y en Auditoría.' });
+      onOpenChange(false);
+      void qc.invalidateQueries({ queryKey: ['conversation'] });
+      void qc.invalidateQueries({ queryKey: ['conversations'] });
+    },
+    onError: (err) => toast.error(errorMessage(err, 'No se pudo marcar como revisada.')),
+  });
+  return (
+    <Dialog open={open} onOpenChange={(o) => !resolve.isPending && onOpenChange(o)}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader className="text-left">
+          <DialogTitle className="font-display text-lg font-semibold">Marcar como revisada</DialogTitle>
+          <DialogDescription className="text-[13px] text-ink-muted">
+            Úsalo cuando ya revisaste el chat <b className="font-mono">{chatId}</b> y lo cerraste a mano en Avaya (o ya no está en la bandeja del robot). Pasa a
+            «Cerrada en Avaya», sale de En vivo y las respuestas que seguían por enviar se descartan. Si el cliente vuelve a escribir en el caso, se reabre.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={resolve.isPending}>
+            Cancelar
+          </Button>
+          <ActionButton icon={ClipboardCheck} loading={resolve.isPending} onClick={() => resolve.mutate()}>
+            Marcar como revisada
+          </ActionButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

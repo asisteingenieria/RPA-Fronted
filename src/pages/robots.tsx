@@ -40,8 +40,9 @@ import {
   type RobotStatus,
   type WorkHours,
 } from '@/lib/api';
-import { fmtAgo, fmtDateTime, fmtMs, fmtPct, fmtTime, formatBytes, formatDate, formatInt } from '@/lib/format';
+import { fmtAgo, fmtDateTime, fmtMs, fmtPct, formatBytes, formatDate, formatInt } from '@/lib/format';
 import { actionLabel, CONV_LABEL, RANGE_LABEL, UPDATE_LABEL } from '@/lib/labels';
+import { duplicateStart } from '@/lib/presence';
 import { reasonFor, viewConversationsReason } from '@/lib/roles';
 import { useUser } from '@/auth/session';
 import { keys, LIVE_MS, useNow, useRobots } from '@/hooks/queries';
@@ -438,7 +439,7 @@ function RobotRow({
 }) {
   const m = r.metrics;
   const upd = r.update && UPDATE_LABEL[r.update.status];
-  const duplicate = r.lastRejectedAt && now - new Date(r.lastRejectedAt).getTime() < 24 * 3_600_000;
+  const duplicate = duplicateStart(r, now);
   const canUpdate = r.update?.requested || (!!pkg && !!r.version && r.version !== pkg);
   const off = !r.enabled ? 'El robot está deshabilitado' : undefined;
   return (
@@ -536,7 +537,7 @@ function RobotRow({
       {duplicate && (
         <TableRow className="hover:!bg-warning-soft">
           <TableCell colSpan={11} className="bg-warning-soft whitespace-normal text-warning">
-            Se intentó abrir este mismo robot en <strong>{r.lastRejectedHost}</strong> ({fmtTime(r.lastRejectedAt)}) mientras estaba en línea en{' '}
+            Se intentó abrir este mismo robot en <strong>{r.lastRejectedHost}</strong> ({fmtDateTime(r.lastRejectedAt)}) mientras estaba en línea en{' '}
             {r.host ?? 'otro equipo'}. Se rechazó: un usuario de Avaya solo puede correr en un equipo a la vez.
           </TableCell>
         </TableRow>

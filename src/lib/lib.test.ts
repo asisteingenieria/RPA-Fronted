@@ -6,6 +6,26 @@ import { can, reasonFor, userGuard, viewConversationsReason } from './roles';
 import { conversationQuery } from './api';
 import { diffLines } from './diff';
 import { parseTraceSearch, searchBlocked, toFilters } from './trace-search';
+import { duplicateStart } from './presence';
+
+describe('aviso de arranque duplicado', () => {
+  const now = Date.parse('2026-11-11T15:00:00Z');
+  const ago = (min: number) => new Date(now - min * 60_000).toISOString();
+
+  it('avisa si otra copia fue rechazada mientras el robot sigue en la misma corrida', () => {
+    expect(duplicateStart({ lastRejectedAt: ago(10), startedAt: ago(120) }, now)).toBe(true);
+    expect(duplicateStart({ lastRejectedAt: ago(10), startedAt: null }, now)).toBe(true);
+  });
+
+  it('no avisa si el robot entró bien después del rechazo (reinicio)', () => {
+    expect(duplicateStart({ lastRejectedAt: ago(10), startedAt: ago(9) }, now)).toBe(false);
+  });
+
+  it('no avisa pasadas 24 h ni sin rechazos', () => {
+    expect(duplicateStart({ lastRejectedAt: ago(25 * 60), startedAt: ago(26 * 60) }, now)).toBe(false);
+    expect(duplicateStart({ lastRejectedAt: null, startedAt: ago(5) }, now)).toBe(false);
+  });
+});
 
 describe('formatos colombianos', () => {
   it('dinero, porcentaje y duraciones', () => {

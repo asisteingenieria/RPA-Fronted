@@ -367,7 +367,7 @@ function Detail({ d }: { d: ConversationDetail }) {
               title="Consentimiento"
               icon={Shield}
               badge={
-                d.consent.chainVerified ? (
+                (d.consentReadings?.length ? d.consentReadings.every((c) => c.chainVerified) : d.consent.chainVerified) ? (
                   <Badge variant="success">
                     <Shield {...ICON} aria-hidden />
                     Registro verificado
@@ -379,14 +379,25 @@ function Detail({ d }: { d: ConversationDetail }) {
                 )
               }
             >
-              <KV
-                rows={[
-                  ['Respuesta exacta', d.consent.answer ? <Code key="a">{d.consent.answer}</Code> : null],
-                  ['Hora', fmtWhen(d.consent.at)],
-                  ['Plantilla legal', `texto legal ${d.consent.legalTemplateVersion}`],
-                  ['Hash', <span key="h" className="font-mono text-xs break-all">{d.consent.hash}</span>],
-                ]}
-              />
+              {/* D-044: una evidencia por lectura (servidores anteriores solo mandan la última). */}
+              {(d.consentReadings?.length ? d.consentReadings : [d.consent]).map((c, i, all) => (
+                <div key={c.hash} className={i > 0 ? 'mt-4 border-t border-border pt-4' : undefined}>
+                  {all.length > 1 && (
+                    <div className="mb-1.5 flex items-center gap-2 text-[11px] leading-[14px] font-semibold tracking-[.06em] text-ink-subtle uppercase">
+                      Lectura {c.reading ?? i + 1}
+                      {!c.chainVerified && <Badge variant="danger">No verifica</Badge>}
+                    </div>
+                  )}
+                  <KV
+                    rows={[
+                      ['Respuesta exacta', c.answer ? <Code key="a">{c.answer}</Code> : null],
+                      ['Hora', fmtWhen(c.at)],
+                      ['Plantilla', `${(c.reading ?? 1) === 2 ? 'segunda lectura' : 'texto legal'} ${c.legalTemplateVersion}`],
+                      ['Hash', <span key="h" className="font-mono text-xs break-all">{c.hash}</span>],
+                    ]}
+                  />
+                </div>
+              ))}
             </Panel>
           )}
           <Panel title="Catálogo usado" icon={Package} flush actions={<span className="text-xs text-ink-muted">{d.brainVersion ? `Brain ${d.brainVersion}` : '—'}</span>}>

@@ -282,7 +282,9 @@ export type TemplateRole =
   | "PORTABILIDAD_CONFIRMACION"
   | "PORTABILIDAD_CONFIRMADA"
   | "PORTABILIDAD_VALIDAR"
-  | "PORTABILIDAD_TRANSFERENCIA";
+  | "PORTABILIDAD_TRANSFERENCIA"
+  // D-044: segunda lectura del tratamiento de datos (si el flujo pide dos).
+  | "SEGUNDA_LECTURA";
 
 /** D-015: flujo de la conversación (listas cerradas; lo aplica la máquina de estados). */
 export type FlowProcess = "PORTABILIDAD" | "MIGRACION" | "LINEA_NUEVA";
@@ -340,6 +342,8 @@ export interface AgentFlow {
   objectionRebates?: number;
   /** D-034: mensaje al cliente al pasar al backoffice (por defecto, sí). */
   transferMessage?: boolean;
+  /** D-044: lecturas del tratamiento de datos antes de pedir los datos (por defecto, 1). */
+  consentReadings?: 1 | 2;
 }
 
 export type PortabilityInquiryMode = "VALIDAR" | "SOPORTE";
@@ -1009,13 +1013,9 @@ export interface ConversationDetail extends ConversationListItem {
     backofficeSummary: string | null;
     transferredAt: string | null;
   } | null;
-  consent: {
-    answer: string | null;
-    at: string;
-    legalTemplateVersion: string;
-    hash: string;
-    chainVerified: boolean;
-  } | null;
+  consent: ConsentReading | null;
+  /** D-044: una evidencia por lectura (servidores anteriores no lo envían). */
+  consentReadings?: ConsentReading[];
   brainVersion: string | null;
   knowledgeUsage: { at: string; planCode: string; priceShown: number | null }[];
   llmCalls: LlmCallRow[];
@@ -1450,6 +1450,16 @@ export const api = {
     ),
 };
 
+export interface ConsentReading {
+  /** D-044: 1 o 2 (servidores anteriores no lo envían: 1). */
+  reading?: number;
+  answer: string | null;
+  at: string;
+  legalTemplateVersion: string;
+  hash: string;
+  chainVerified: boolean;
+}
+
 /** Descargas directas (el navegador manda la cookie de sesión). */
 export const urls = {
   robotPackage: "/admin/robots/package",
@@ -1458,6 +1468,9 @@ export const urls = {
   /** CSV del filtro, sin el texto de los mensajes. */
   conversationsCsv: (f: ConversationFilters) =>
     `/admin/conversations/export?${conversationQuery({ ...f, cursor: undefined })}`,
+  /** D-045: log de auditoría por interacción (una fila por paso, campos de Claro). */
+  auditLogCsv: (f: ConversationFilters) =>
+    `/admin/conversations/audit-log?${conversationQuery({ ...f, cursor: undefined })}`,
   /** Transcripción completa de una conversación. */
   transcript: (id: string) => `/admin/conversations/export?id=${enc(id)}`,
 };

@@ -43,6 +43,7 @@ export const ROLE_LABEL: Record<TemplateRole, string> = {
   PORTABILIDAD_CONFIRMADA: 'Portabilidad: ya confirmada',
   PORTABILIDAD_VALIDAR: 'Portabilidad: validar',
   PORTABILIDAD_TRANSFERENCIA: 'Portabilidad: transferir',
+  SEGUNDA_LECTURA: 'Segunda lectura (datos)',
 };
 
 /**
@@ -68,6 +69,7 @@ export const SYSTEM_ROLES: readonly TemplateRole[] = [
   'PORTABILIDAD_CONFIRMADA',
   'PORTABILIDAD_VALIDAR',
   'PORTABILIDAD_TRANSFERENCIA',
+  'SEGUNDA_LECTURA',
 ];
 const isSystem = (role: TemplateRole) => SYSTEM_ROLES.includes(role);
 
@@ -105,6 +107,8 @@ const ROLE_HELP: Record<TemplateRole, string> = {
     'Si el cliente no recibió la confirmación: le pide los datos para validarla. {datos_faltantes} dice cuáles (los de «Flujo → Datos para pasar la venta»).',
   PORTABILIDAD_TRANSFERENCIA:
     'Con los datos, la validación pasa al backoffice con «Finalizar» (no es una venta). Admite {nombre_cliente}.',
+  SEGUNDA_LECTURA:
+    'Solo si «Flujo → Lecturas del tratamiento de datos» pide dos: tras el primer «SÍ» la envía el sistema para confirmar; con el segundo «SÍ» se piden los datos. Cada «SÍ» queda como evidencia. Admite {nombre_cliente}. El texto debe aprobarlo Cumplimiento de Claro.',
 };
 
 /** Tono de cada rol (siempre con su nombre al lado). */
@@ -134,6 +138,7 @@ const ROLE_TONE: Record<TemplateRole, string> = {
   PORTABILIDAD_CONFIRMADA: 'bg-surface-200 text-ink',
   PORTABILIDAD_VALIDAR: 'bg-surface-200 text-ink',
   PORTABILIDAD_TRANSFERENCIA: 'bg-surface-200 text-ink',
+  SEGUNDA_LECTURA: 'bg-warning-soft text-warning',
 };
 
 const ROLES = Object.keys(ROLE_LABEL) as TemplateRole[];

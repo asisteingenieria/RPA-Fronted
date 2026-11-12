@@ -490,6 +490,26 @@ export function FlowEditor({
       </fieldset>
 
       <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+        <legend className="mb-1.5 text-[13px] font-semibold text-ink">Lecturas del tratamiento de datos</legend>
+        <div className="flex items-center gap-1.5">
+          <Checkbox
+            id="consent-readings"
+            checked={(flow.consentReadings ?? 1) === 2}
+            disabled={readOnly}
+            onCheckedChange={(c) => onChange({ ...flow, consentReadings: c === true ? 2 : 1 })}
+          />
+          <Label htmlFor="consent-readings" className="text-xs text-ink-muted">
+            Pedir una segunda confirmación antes de pedir los datos
+          </Label>
+        </div>
+        <span className="text-xs leading-4 text-ink-subtle">
+          Marcado, tras el primer «SÍ» el robot envía la plantilla «Segunda lectura (datos)» y solo con el segundo «SÍ» pide los datos. Cada «SÍ»
+          queda como evidencia aparte (lectura 1 y lectura 2) en la cadena de consentimientos. Un «NO» en cualquiera de las dos sigue el camino de
+          «No autoriza».
+        </span>
+      </fieldset>
+
+      <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
         <legend className="mb-1.5 text-[13px] font-semibold text-ink">Paso al backoffice</legend>
         <div className="flex items-center gap-1.5">
           <Checkbox

@@ -107,6 +107,21 @@ export function TrazabilidadPage() {
     }
   };
 
+  const [exportingLog, setExportingLog] = useState(false);
+  const exportAuditLog = async () => {
+    setExportingLog(true);
+    try {
+      await download(urls.auditLogCsv(toFilters(search, false)), 'log-auditoria.csv');
+      toast.success('Log de auditoría listo', {
+        description: 'Una fila por paso, línea enmascarada y sin datos del cliente. Quedó registrado en Auditoría.',
+      });
+    } catch (err) {
+      toast.error(errorMessage(err, 'No se pudo exportar.'));
+    } finally {
+      setExportingLog(false);
+    }
+  };
+
   const forbidden = !!locked || isForbidden(list.error) || isForbidden(stats.error);
 
   return (
@@ -126,6 +141,16 @@ export function TrazabilidadPage() {
               title="CSV sin el texto de los mensajes · queda en Auditoría"
             >
               Exportar CSV
+            </ActionButton>
+            <ActionButton
+              variant="secondary"
+              icon={Download}
+              loading={exportingLog}
+              reason={forbidden ? 'Requiere rol ADMIN' : blocked ? 'Reduce el rango para buscar texto' : undefined}
+              onClick={() => void exportAuditLog()}
+              title="Log de auditoría por interacción (pasos, resultado, línea enmascarada) · queda en Auditoría"
+            >
+              Log de auditoría
             </ActionButton>
           </>
         }

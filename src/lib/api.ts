@@ -273,6 +273,7 @@ export type TemplateRole =
   | "CONFIRMAR_AUTORIZACION"
   | "AUTORIZACION_POR_ESCRITO"
   | "NOTA_DE_VOZ_ILEGIBLE"
+  | "IMAGEN_ILEGIBLE"
   | "DATOS_FALTANTES"
   // D-021: eligió cambiarse de operador pero ya es pospago del operador propio.
   | "YA_POSPAGO"
@@ -579,7 +580,7 @@ export interface AgentTestImage {
 /* ───── Consumo de los modelos: /admin/usage ───── */
 
 export type UsageUse =
-  "CHAT" | "VOICE" | "IMAGE_READ" | "EMBEDDING" | "EVAL" | "TEST";
+  "CHAT" | "VOICE" | "INBOUND_IMAGE" | "IMAGE_READ" | "EMBEDDING" | "EVAL" | "TEST";
 
 export interface UsageTotals {
   calls: number;
@@ -945,7 +946,11 @@ export interface TraceMessage {
   delivery?: { status: DeliveryStatus; attempts: number };
   /** Desde que llegó la ráfaga del cliente hasta que Avaya confirmó el envío. */
   responseMs?: number | null;
-  /** D-010: nota de voz del cliente; `text` es su transcripción. El audio no se guarda. */
+  /**
+   * D-010: nota de voz del cliente; `text` es su transcripción. D-047: imagen o sticker del cliente;
+   * `text` es su descripción automática (el pie de foto llega como otro mensaje). El archivo no se
+   * guarda.
+   */
   media?: TraceMedia | null;
   /** D-014: imagen de planes enviada; `text` es su pie de foto. null = la versión ya no existe. */
   image?: TraceImage | null;
@@ -959,7 +964,7 @@ export interface TraceImage {
 export type TranscriptStatus =
   "PENDING" | "OK" | "UNINTELLIGIBLE" | "TOO_LONG" | "FAILED";
 export interface TraceMedia {
-  kind: "AUDIO";
+  kind: "AUDIO" | "IMAGE";
   durationSec: number | null;
   transcriptStatus: TranscriptStatus;
   transcriptMs: number | null;

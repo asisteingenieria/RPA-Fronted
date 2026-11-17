@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 const USE_LABEL: Record<UsageUse, string> = {
   CHAT: 'Conversaciones',
   VOICE: 'Notas de voz',
+  INBOUND_IMAGE: 'Imágenes del cliente',
   IMAGE_READ: 'Lectura de imágenes',
   EMBEDDING: 'Búsqueda en Brains',
   EVAL: 'Evaluaciones',
@@ -23,6 +24,7 @@ const USE_LABEL: Record<UsageUse, string> = {
 const USE_HELP: Record<UsageUse, string> = {
   CHAT: 'Respuestas del agente a clientes reales',
   VOICE: 'Transcripción de notas de voz de clientes',
+  INBOUND_IMAGE: 'Descripción de las imágenes y stickers que mandan los clientes',
   IMAGE_READ: 'Lectura de los planes en las imágenes del Brain',
   EMBEDDING: 'Embeddings de documentos y consultas (aproximado)',
   EVAL: 'Suite de evaluación del agente y de los Brains',
@@ -32,6 +34,7 @@ const USE_HELP: Record<UsageUse, string> = {
 const USE_BAR: Record<UsageUse, string> = {
   CHAT: 'bg-primary',
   VOICE: 'bg-cat-tyt',
+  INBOUND_IMAGE: 'bg-success',
   IMAGE_READ: 'bg-cat-movil',
   EMBEDDING: 'bg-cat-tecnologia',
   EVAL: 'bg-warning',

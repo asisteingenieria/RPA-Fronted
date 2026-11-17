@@ -36,6 +36,7 @@ export const ROLE_LABEL: Record<TemplateRole, string> = {
   CONFIRMAR_AUTORIZACION: 'Confirmar autorización',
   AUTORIZACION_POR_ESCRITO: 'Autorización por escrito',
   NOTA_DE_VOZ_ILEGIBLE: 'Nota de voz ilegible',
+  IMAGEN_ILEGIBLE: 'Imagen que no se pudo ver',
   DATOS_FALTANTES: 'Datos que faltan',
   YA_POSPAGO: 'Ya es pospago',
   PIE_IMAGEN: 'Pie de imagen adicional',
@@ -62,6 +63,7 @@ export const SYSTEM_ROLES: readonly TemplateRole[] = [
   'CONFIRMAR_AUTORIZACION',
   'AUTORIZACION_POR_ESCRITO',
   'NOTA_DE_VOZ_ILEGIBLE',
+  'IMAGEN_ILEGIBLE',
   'DATOS_FALTANTES',
   'YA_POSPAGO',
   'PIE_IMAGEN',
@@ -93,6 +95,8 @@ const ROLE_HELP: Record<TemplateRole, string> = {
   CONFIRMAR_AUTORIZACION: 'La envía el sistema si la respuesta a la autorización es ambigua: solo vale un SÍ o un NO explícito.',
   AUTORIZACION_POR_ESCRITO: 'La envía el sistema si el cliente autoriza en una nota de voz: la autorización solo vale escrita.',
   NOTA_DE_VOZ_ILEGIBLE: 'La envía el sistema si no pudo transcribir una nota de voz.',
+  IMAGEN_ILEGIBLE:
+    'La envía el sistema si no pudo descargar o ver una imagen o sticker del cliente: le pide contarlo en texto.',
   DATOS_FALTANTES:
     'Tras el «SÍ», si aún faltan datos del cliente para pasar la venta (se eligen en «Flujo»). {datos_faltantes} dice cuáles: «tu nombre completo y tu correo electrónico».',
   YA_POSPAGO:
@@ -131,6 +135,7 @@ const ROLE_TONE: Record<TemplateRole, string> = {
   CONFIRMAR_AUTORIZACION: 'bg-surface-200 text-ink',
   AUTORIZACION_POR_ESCRITO: 'bg-surface-200 text-ink',
   NOTA_DE_VOZ_ILEGIBLE: 'bg-surface-200 text-ink',
+  IMAGEN_ILEGIBLE: 'bg-surface-200 text-ink',
   DATOS_FALTANTES: 'bg-surface-200 text-ink',
   YA_POSPAGO: 'bg-surface-200 text-ink',
   PIE_IMAGEN: 'bg-surface-200 text-ink',

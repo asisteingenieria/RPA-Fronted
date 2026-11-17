@@ -115,8 +115,9 @@ export function TraceChat({
                     )}
                   </figure>
                 )}
-                {m.media?.kind === 'AUDIO' ? (
+                {m.media ? (
                   <VoiceNote
+                    kind={m.media.kind}
                     durationSec={m.media.durationSec}
                     status={m.media.transcriptStatus}
                     transcriptMs={m.media.transcriptMs}
